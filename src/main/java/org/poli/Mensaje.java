@@ -1,16 +1,33 @@
 package org.poli;
 
-import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Mensaje {
     private String contenido;
-    private InetAddress origen;
-    private String creador;
+    private Usuario creador;
+    private String codigoTopico;
 
-    public Mensaje(String contenido, InetAddress origen, String creador) {
+    public Mensaje(String contenido, Usuario creador) {
         this.contenido = contenido;
-        this.origen = origen;
         this.creador = creador;
+    }
+
+    public Mensaje(HashMap<Integer, Fragmento> fragmentos, int cantFragmentos){
+        ArrayList<String> contenidos = new ArrayList<>();
+        this.creador = fragmentos.get(0).getCreador();
+        for (int i = 0; i < cantFragmentos; i++) {
+            contenidos.add(fragmentos.get(i).getTexto());
+        }
+        this.contenido = String.join("", contenidos);
+    }
+
+    public String getCodigoTopico() {
+        return codigoTopico;
+    }
+
+    public void setCodigoTopico(String codigoTopico) {
+        this.codigoTopico = codigoTopico;
     }
 
     public String getContenido() {
@@ -21,19 +38,11 @@ public class Mensaje {
         this.contenido = contenido;
     }
 
-    public InetAddress getOrigen() {
-        return origen;
-    }
-
-    public void setOrigen(InetAddress origen) {
-        this.origen = origen;
-    }
-
-    public String getCreador() {
+    public Usuario getCreador() {
         return creador;
     }
 
-    public void setCreador(String creador) {
+    public void setCreador(Usuario creador) {
         this.creador = creador;
     }
 
