@@ -1,19 +1,17 @@
 package org.poli;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
 public class Topico {
     private String nombre;
-    private String prefijo;
+    private String codigo;
     private CRC32 crc32;
     private ArrayList<Mensaje> mensajes;
     private DatagramChannel canal;
@@ -22,14 +20,16 @@ public class Topico {
     private int tamanoDatagrama;
     Usuario usuario;
 
-    public Topico(String nombre, String prefijo, ArrayList<Mensaje> mensajes, DatagramChannel canal, Pattern patron, int tamanoDatagrama) {
+    public Topico(String nombre, String codigo, ArrayList<Mensaje> mensajes, DatagramChannel canal, Pattern patron, SocketAddress servidor, Usuario usuario, int tamanoDatagrama) {
         this.nombre = nombre;
-        this.prefijo = prefijo;
+        this.codigo = codigo;
         this.mensajes = mensajes;
         this.canal = canal;
         this.patron = patron;
         this.tamanoDatagrama = tamanoDatagrama;
         this.crc32 = new CRC32();
+        this.servidor = servidor;
+        this.usuario = usuario;
     }
 
     public String getNombre() {
@@ -40,12 +40,12 @@ public class Topico {
         this.nombre = nombre;
     }
 
-    public String getPrefijo() {
-        return prefijo;
+    public String getCodigo() {
+        return codigo;
     }
 
-    public void setPrefijo(String prefijo) {
-        this.prefijo = prefijo;
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
     }
 
     public ArrayList<Mensaje> getMensajes() {
@@ -73,21 +73,28 @@ public class Topico {
     }
 
     public void enviar(Mensaje mensaje) throws IOException {
-        String texto = prefijo + mensaje.toString();
+        String texto = codigo + ":" + mensaje.toString();
         int cantFragmentos = texto.length() / tamanoDatagrama;
+/*
+        if (cantFragmentos == 0){
+            canal.send(ByteBuffer.wrap(texto.getBytes()), servidor);
+        }*/
         ArrayList<Fragmento> fragmentos = new ArrayList<>();
 
-        for (int i = 0; i < cantFragmentos; i++){
-            fragmentos.add(new Fragmento(usuario, i,
-                    texto.substring(i * tamanoDatagrama, tamanoDatagrama).getBytes(), crc32));
+
+        for (int i = 0; i <= cantFragmentos; i++){
+            int indexfin = tamanoDatagrama * (i+1);
+            if (texto.length() < indexfin){
+                indexfin = texto.length();
+            }
+            fragmentos.add(new Fragmento(usuario, i, cantFragmentos,
+                    texto.substring(i * tamanoDatagrama, indexfin).getBytes(), crc32));
         }
 
-        for (var f:
-             fragmentos) {
+        System.out.println(new String(fragmentos.get(0).getBytes(), StandardCharsets.UTF_8));
+        for (var f: fragmentos) {
             canal.send(ByteBuffer.wrap(f.getBytes()), servidor);
         }
-        canal.send(ByteBuffer.wrap(texto.getBytes(StandardCharsets.UTF_8)), servidor);
-
     }
 
     public ArrayList<Mensaje> recibir(){
