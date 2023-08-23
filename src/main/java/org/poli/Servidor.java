@@ -49,14 +49,14 @@ public class Servidor {
             long hash = Utils.bytesToLong(longbytes);
             System.out.println(hash);
             if (!checkFragment(message, hash)){
-                var f = new Fragmento(message, packet.getAddress());
+                var f = new Fragmento(message, new InetSocketAddress(packet.getAddress(), packet.getPort()));
                 System.out.println(Arrays.toString(f.getBytes()));
                 System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
             int fragmentosTotales = 0;
             HashMap<Integer, Fragmento> fragmentos = new HashMap<>();
-            Fragmento f = new Fragmento(message, packet.getAddress());
+            Fragmento f = new Fragmento(message, new InetSocketAddress(packet.getAddress(), packet.getPort()));
             fragmentosTotales = f.getTotalPaquetes() + 1;
             fragmentos.put(f.getIndice(),f);
             for (int i = 1; i < fragmentosTotales; i++) {
@@ -69,17 +69,17 @@ public class Servidor {
                     System.out.println("FRAGMENTO INCORRECTO: " + f.getIndice());
                 }
                 // System.out.println((new Date()).toString() + ": " +message);
-                Fragmento nuevoFragmento = new Fragmento(message, );
+                Fragmento nuevoFragmento = new Fragmento(message, new InetSocketAddress(packet.getAddress(), packet.getPort()) );
                 fragmentos.put(nuevoFragmento.getIndice(), nuevoFragmento);
             }
             Mensaje mensaje = new Mensaje(fragmentos, fragmentosTotales);
-            System.out.println("MENSAJE: " + mensaje.getCreador().getNombre() + " : " + mensaje.getContenido());
+            System.out.println("MENSAJE: " + mensaje.getCreador().getNombre() + ": " + mensaje.getContenido());
 
 
             if (mensaje.getContenido().equals("\\subscribe")) {
                 executorService.submit(() -> subscribe(mensaje.getCodigoTopico(), packet.getAddress()));
             } else {
-                executorService.submit(() -> publish(mensaje.getCodigoTopico(), mensaje.getContenido(), packet.getAddress()));
+              //  executorService.submit(() -> publish(mensaje.getCodigoTopico(), mensaje.getContenido(), packet.getAddress()));
             }
         }
     }
