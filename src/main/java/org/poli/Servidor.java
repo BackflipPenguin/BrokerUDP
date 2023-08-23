@@ -60,6 +60,7 @@ public class Servidor {
             fragmentosTotales = f.getTotalPaquetes() + 1;
             fragmentos.put(f.getIndice(),f);
             for (int i = 1; i < fragmentosTotales; i++) {
+                socket.receive(packet);
                 data = packet.getData();
                 message = new String(data, 8, packet.getLength() - 8);
                 System.arraycopy(data,0, longbytes, 0, 8);
@@ -68,7 +69,7 @@ public class Servidor {
                     System.out.println("FRAGMENTO INCORRECTO: " + f.getIndice());
                 }
                 // System.out.println((new Date()).toString() + ": " +message);
-                Fragmento nuevoFragmento = new Fragmento(message, packet.getAddress());
+                Fragmento nuevoFragmento = new Fragmento(message, );
                 fragmentos.put(nuevoFragmento.getIndice(), nuevoFragmento);
             }
             Mensaje mensaje = new Mensaje(fragmentos, fragmentosTotales);

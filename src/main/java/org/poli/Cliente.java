@@ -14,6 +14,8 @@ public class Cliente {
 
     private ArrayList<Topico> canales;
 
+    //private DatagramChannel canalRecepcion;
+
     public Cliente(DatagramSocket socket, ArrayList<Topico> canales) {
         this.socket = socket;
         this.canales = canales;
@@ -37,9 +39,12 @@ public class Cliente {
 
     public static void main(String[] args) throws IOException {
         var channel = DatagramChannel.open();
-        var yo = new Usuario(InetAddress.getLocalHost(), "USUARIO");
+        var canalRecepcion = DatagramChannel.open();
+
+        var yo = new Usuario( canalRecepcion.getLocalAddress(), "USUARIO");
         channel.bind(null);
         channel.configureBlocking(false);
+
         var t = new Topico("Test","t",
                 new ArrayList<>(),
                 channel, Pattern.compile(""),

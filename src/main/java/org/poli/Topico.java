@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
@@ -31,6 +32,8 @@ public class Topico {
         this.servidor = servidor;
         this.usuario = usuario;
     }
+
+    private HashSet<Usuario> suscriptores;
 
     public String getNombre() {
         return nombre;
@@ -72,11 +75,18 @@ public class Topico {
         this.patron = patron;
     }
 
+    public void suscribir(Usuario usuario){
+        suscriptores.add(usuario);
+    }
+
+    public void broadcast(Mensaje mensaje){
+        for 
+    }
+
     public void enviar(Mensaje mensaje) throws IOException {
         String texto = codigo + ":" + mensaje.toString();
         int tamanoHeader = new Fragmento(usuario, 1, 1,
                 new byte[0], this.codigo, crc32).getTamanoHeader();
-
         tamanoDatagrama -= tamanoHeader;
         int cantFragmentos = texto.length() / tamanoDatagrama ;
         if (cantFragmentos > 9 && cantFragmentos < 100){
