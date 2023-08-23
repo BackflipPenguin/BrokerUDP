@@ -61,7 +61,7 @@ public class Servidor {
             fragmentos.put(f.getIndice(),f);
             for (int i = 1; i < fragmentosTotales; i++) {
                 data = packet.getData();
-                message = new String(data, 10, packet.getLength());
+                message = new String(data, 8, packet.getLength() - 8);
                 System.arraycopy(data,0, longbytes, 0, 8);
 
                 if (!checkFragment(message, Utils.bytesToLong(longbytes))){

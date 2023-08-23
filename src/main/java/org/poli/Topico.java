@@ -75,7 +75,8 @@ public class Topico {
     public void enviar(Mensaje mensaje) throws IOException {
         String texto = codigo + ":" + mensaje.toString();
         int tamanoHeader = new Fragmento(usuario, 1, 1,
-                "".getBytes(), this.codigo, crc32).getTamanoHeader();
+                new byte[0], this.codigo, crc32).getTamanoHeader();
+
         tamanoDatagrama -= tamanoHeader;
         int cantFragmentos = texto.length() / tamanoDatagrama ;
         if (cantFragmentos > 9 && cantFragmentos < 100){
