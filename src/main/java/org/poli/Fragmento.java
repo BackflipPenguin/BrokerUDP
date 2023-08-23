@@ -65,7 +65,7 @@ public class Fragmento {
     private void generateHeader(Usuario creador, int indice, int totalPaquetes, String codigoTopico){
         this.header = creador + ":" + Integer.toString
                 (indice) + ":" + Integer.toString(totalPaquetes) + ":" + codigoTopico + ":";
-        this.tamanoHeader = this.header.length() * 2 + 8; // 8 bytes del CRC32
+        this.tamanoHeader = this.header.length() * 2 + 8; // 8 bytes del CRC32, char = 2 bytes
     }
     public void setTotalPaquetes(int totalPaquetes) {
         this.totalPaquetes = totalPaquetes;

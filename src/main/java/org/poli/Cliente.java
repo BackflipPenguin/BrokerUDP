@@ -41,7 +41,7 @@ public class Cliente {
         var channel = DatagramChannel.open();
         var canalRecepcion = DatagramChannel.open();
 
-        var yo = new Usuario( canalRecepcion.getLocalAddress(), "USUARIO");
+        var yo = new Usuario(new InetSocketAddress(String.valueOf(canalRecepcion.getLocalAddress()), canalRecepcion.socket().getLocalPort()), "USUARIO");
         channel.bind(null);
         channel.configureBlocking(false);
 

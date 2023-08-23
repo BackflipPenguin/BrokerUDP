@@ -80,19 +80,20 @@ public class Topico {
     }
 
     public void broadcast(Mensaje mensaje){
-        for 
+
     }
 
     public void enviar(Mensaje mensaje) throws IOException {
-        String texto = codigo + ":" + mensaje.toString();
+        int tamanoDatagrama = this.tamanoDatagrama;
+        String texto = mensaje.toString();
         int tamanoHeader = new Fragmento(usuario, 1, 1,
                 new byte[0], this.codigo, crc32).getTamanoHeader();
         tamanoDatagrama -= tamanoHeader;
         int cantFragmentos = texto.length() / tamanoDatagrama ;
         if (cantFragmentos > 9 && cantFragmentos < 100){
-            tamanoDatagrama += 1;
+            tamanoDatagrama -= 2;
         } else if (cantFragmentos > 100) {
-            tamanoDatagrama += 2;
+            tamanoDatagrama -= 4;
         }
 /*
         if (cantFragmentos == 0){
@@ -103,9 +104,9 @@ public class Topico {
 
         for (int i = 0; i <= cantFragmentos; i++){
             if (i == 10){
-                tamanoDatagrama += 1;
+                tamanoDatagrama -= 2;
             } else if (i == 100) {
-                tamanoDatagrama += 1;
+                tamanoDatagrama -= 2;
             }
 
             int indexfin = tamanoDatagrama * (i+1);
@@ -116,7 +117,6 @@ public class Topico {
                     texto.substring(i * tamanoDatagrama, indexfin).getBytes(), this.codigo,  crc32));
         }
 
-        System.out.println(new String(fragmentos.get(0).getBytes(), StandardCharsets.UTF_8));
         for (var f: fragmentos) {
             canal.send(ByteBuffer.wrap(f.getBytes()), servidor);
         }
