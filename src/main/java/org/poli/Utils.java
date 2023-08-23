@@ -1,6 +1,7 @@
 package org.poli;
 
 import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
 
 public class Utils {
     static <T> T arrayConcat(T array1, T array2) {
@@ -27,5 +28,19 @@ public class Utils {
 
         return result;
     }
+
+    public static byte[] longToBytes(long x) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.putLong(x);
+        return buffer.array();
+    }
+
+    public static long bytesToLong(byte[] bytes) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.put(bytes);
+        buffer.flip();//need flip
+        return buffer.getLong();
+    }
+
 
 }

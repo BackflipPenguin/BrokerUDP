@@ -27,11 +27,10 @@ public class Servidor {
         executorService = Executors.newFixedThreadPool(10);
     }
 
-    public boolean checkFragment(String s){
-        var parts = s.split(":", 2);
+    public boolean checkFragment(String s, long hash){
         CRC32 crc32 = new CRC32();
-        crc32.update(parts[1].getBytes(StandardCharsets.UTF_8));
-        return Objects.equals(parts[0], Long.toString(crc32.getValue()));
+        crc32.update(s.getBytes(StandardCharsets.UTF_8));
+        return hash == crc32.getValue();
     }
     public void start() throws IOException {
         DatagramSocket socket = new DatagramSocket(PORT);
@@ -42,9 +41,16 @@ public class Servidor {
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             socket.receive(packet);
 
+            var data = packet.getData();
             // recibir mensaje
-            String message = new String(packet.getData(), 0, packet.getLength());
-            if (!checkFragment(message)){
+            String message = new String(data, 8, packet.getLength() -8, StandardCharsets.UTF_8);
+            byte[] longbytes = new byte[8];
+            System.arraycopy(data, 0, longbytes, 0, 8);
+            long hash = Utils.bytesToLong(longbytes);
+            System.out.println(hash);
+            if (!checkFragment(message, hash)){
+                var f = new Fragmento(message, packet.getAddress());
+                System.out.println(Arrays.toString(f.getBytes()));
                 System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
@@ -54,9 +60,12 @@ public class Servidor {
             fragmentosTotales = f.getTotalPaquetes() + 1;
             fragmentos.put(f.getIndice(),f);
             for (int i = 1; i < fragmentosTotales; i++) {
-                message = new String(packet.getData(), 0, packet.getLength());
-                if (!checkFragment(message)){
-                    System.out.println("MENSAJE INCORRECTO");
+                data = packet.getData();
+                message = new String(data, 10, packet.getLength());
+                System.arraycopy(data,0, longbytes, 0, 8);
+
+                if (!checkFragment(message, Utils.bytesToLong(longbytes))){
+                    System.out.println("FRAGMENTO INCORRECTO: " + f.getIndice());
                 }
                 // System.out.println((new Date()).toString() + ": " +message);
                 Fragmento nuevoFragmento = new Fragmento(message, packet.getAddress());

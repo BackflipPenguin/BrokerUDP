@@ -16,6 +16,18 @@ public class Fragmento {
     private CRC32 crc32;
     private String texto;
 
+    private int tamanoHeader;
+
+    private String header;
+
+    public String getHeader() {
+        return header;
+    }
+
+    public void setHeader(String header) {
+        this.header = header;
+    }
+
     public Fragmento(Usuario creador, int indice, byte[] contenido) {
         this.creador = creador;
         this.indice = indice;
@@ -38,7 +50,22 @@ public class Fragmento {
         this.totalPaquetes = totalPaquetes;
         this.texto = new String(contenido, StandardCharsets.UTF_8);
     }
+    public Fragmento(Usuario creador, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32) {
+        this.creador = creador;
+        this.indice = indice;
+        this.contenido = contenido;
+        this.crc32 = crc32;
+        this.totalPaquetes = totalPaquetes;
+        this.texto = new String(contenido, StandardCharsets.UTF_8);
+        this.codigoTopico = codigoTopico;
+        generateHeader(creador, indice, totalPaquetes, codigoTopico);
+    }
 
+    private void generateHeader(Usuario creador, int indice, int totalPaquetes, String codigoTopico){
+        this.header = creador + ":" + Integer.toString
+                (indice) + ":" + Integer.toString(totalPaquetes) + ":" + codigoTopico + ":";
+        this.tamanoHeader = this.header.length() * 2 + 8; // 8 bytes del CRC32
+    }
     public void setTotalPaquetes(int totalPaquetes) {
         this.totalPaquetes = totalPaquetes;
     }
@@ -60,7 +87,10 @@ public class Fragmento {
     }
 
     public CRC32 getCrc32() {
-        return crc32;
+        if (this.crc32 != null)
+            return crc32;
+        else
+            return new CRC32();
     }
 
     public void setCrc32(CRC32 crc32) {
@@ -75,18 +105,34 @@ public class Fragmento {
         return this.totalPaquetes;
     }
 
+    public String getCodigoTopico() {
+        return codigoTopico;
+    }
+
+    public void setCodigoTopico(String codigoTopico) {
+        this.codigoTopico = codigoTopico;
+    }
+
+    public int getTamanoHeader() {
+        return tamanoHeader;
+    }
+
+    public void setTamanoHeader(int tamanoHeader) {
+        this.tamanoHeader = tamanoHeader;
+    }
+
     public Fragmento(String recibido, InetAddress addr){
-        String[] partes = recibido.split(":", 6);
-        if (partes.length != 6) {
+        String[] partes = recibido.split(":", 5);
+        if (partes.length != 5) {
             return;
         }
-        hash = Long.parseLong(partes[0]);
-        creador = new Usuario(addr, partes[1]);
-        indice = Integer.parseInt(partes[2]);
-        totalPaquetes = Integer.parseInt(partes[3]);
-        this.codigoTopico = partes[4];
-        this.texto  = partes[5];
+        creador = new Usuario(addr, partes[0]);
+        indice = Integer.parseInt(partes[1]);
+        totalPaquetes = Integer.parseInt(partes[2]);
+        this.codigoTopico = partes[3];
+        this.texto  = partes[4];
         this.contenido = texto.getBytes(StandardCharsets.UTF_8);
+        generateHeader(creador, indice, totalPaquetes, codigoTopico);
     }
     public String getTexto(){
         return texto;
@@ -120,14 +166,15 @@ public class Fragmento {
     //                           1      2     3          4           5     6
     // ESTRUCTURA FRAGMENTO    HASH:CREADOR:INDICE:TOTAL_PAQUETES:TOPICO:CONTENIDO
     public byte[] getBytes(){
-        String header = creador + ":" + Integer.toString(indice) + ":" + Integer.toString(totalPaquetes) + ":";
-
-         var envio = Utils.arrayConcat(header.getBytes(StandardCharsets.UTF_8), contenido);
-         crc32.update(envio);
-         hash = crc32.getValue();
-         crc32.reset();
+        var envio = Utils.arrayConcat(header.getBytes(StandardCharsets.UTF_8), contenido);
+        CRC32 crc = this.getCrc32();
+        crc.update(envio);
+        hash = crc.getValue();
+        crc.reset();
+        System.out.println(hash);
         System.out.println(new String(envio, StandardCharsets.UTF_8));
-         return Utils.arrayConcat((Long.toString(hash) + ":").getBytes(StandardCharsets.UTF_8), envio);
+        return Utils.arrayConcat(Utils.longToBytes(hash), envio);
+
     }
 
 
