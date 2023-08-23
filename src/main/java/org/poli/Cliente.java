@@ -45,8 +45,7 @@ public class Cliente {
                 channel, Pattern.compile(""),
                 new InetSocketAddress(InetAddress.getLocalHost(), 12345), yo, 1024);
 
-        t.enviar(new Mensaje("\n" +
-                "\n" +
+        t.enviar(new Mensaje(
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean dapibus scelerisque lacinia. Pellentesque purus metus, tempus eget varius eget, semper vitae ex. Cras leo dui, dignissim quis diam vel, tincidunt laoreet lacus. Vestibulum nec turpis quis mi scelerisque mollis in at dolor. Fusce ut tempus enim. Phasellus neque ligula, luctus sit amet enim quis, lobortis viverra diam. Suspendisse viverra tempus sagittis. Sed tincidunt orci at augue ultrices cursus. Sed sed ipsum velit.\n" +
                 "\n" +
                 "Praesent mattis tristique arcu, a pellentesque dui laoreet non. Vivamus laoreet quam orci, eget consequat ligula hendrerit non. Sed a pharetra enim. Proin vel convallis enim, at dictum magna. Quisque euismod, felis sed venenatis porta, quam justo malesuada ipsum, non aliquam justo tortor quis ipsum. Duis venenatis ligula mauris, quis ultrices justo sodales at. Cras dignissim pharetra eros, at condimentum erat dapibus in. Quisque eget nisl tincidunt nunc fringilla placerat vitae at urna. Curabitur ullamcorper, purus eget iaculis tempor, libero erat fermentum ex, non bibendum ipsum mi in turpis. Nam mollis ipsum in urna semper aliquet. Vestibulum purus leo, mattis in lectus ac, eleifend convallis nulla. Donec vitae tortor purus. Vestibulum sapien ipsum, bibendum at nibh quis, ultrices aliquam velit. Phasellus sed justo et magna sodales egestas nec ut lorem. Quisque nec suscipit est.\n" +
