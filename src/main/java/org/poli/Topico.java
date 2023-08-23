@@ -74,7 +74,15 @@ public class Topico {
 
     public void enviar(Mensaje mensaje) throws IOException {
         String texto = codigo + ":" + mensaje.toString();
-        int cantFragmentos = texto.length() / tamanoDatagrama;
+        int tamanoHeader = new Fragmento(usuario, 1, 1,
+                "".getBytes(), this.codigo, crc32).getTamanoHeader();
+        tamanoDatagrama -= tamanoHeader;
+        int cantFragmentos = texto.length() / tamanoDatagrama ;
+        if (cantFragmentos > 9 && cantFragmentos < 100){
+            tamanoDatagrama += 1;
+        } else if (cantFragmentos > 100) {
+            tamanoDatagrama += 2;
+        }
 /*
         if (cantFragmentos == 0){
             canal.send(ByteBuffer.wrap(texto.getBytes()), servidor);
@@ -83,12 +91,18 @@ public class Topico {
 
 
         for (int i = 0; i <= cantFragmentos; i++){
+            if (i == 10){
+                tamanoDatagrama += 1;
+            } else if (i == 100) {
+                tamanoDatagrama += 1;
+            }
+
             int indexfin = tamanoDatagrama * (i+1);
             if (texto.length() < indexfin){
                 indexfin = texto.length();
             }
             fragmentos.add(new Fragmento(usuario, i, cantFragmentos,
-                    texto.substring(i * tamanoDatagrama, indexfin).getBytes(), crc32));
+                    texto.substring(i * tamanoDatagrama, indexfin).getBytes(), this.codigo,  crc32));
         }
 
         System.out.println(new String(fragmentos.get(0).getBytes(), StandardCharsets.UTF_8));
