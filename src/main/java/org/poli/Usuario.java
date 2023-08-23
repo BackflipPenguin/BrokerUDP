@@ -4,19 +4,19 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 public class Usuario {
-    private InetAddress direccion;
+    private InetSocketAddress direccion;
     private String nombre;
 
-    public Usuario(InetAddress direccion, String nombre) {
+    public Usuario(InetSocketAddress direccion, String nombre) {
         this.direccion = direccion;
         this.nombre = nombre;
     }
 
-    public InetAddress getDireccion() {
+    public InetSocketAddress getDireccion() {
         return direccion;
     }
 
-    public void setDireccion(InetAddress direccion) {
+    public void setDireccion(InetSocketAddress direccion) {
         this.direccion = direccion;
     }
 

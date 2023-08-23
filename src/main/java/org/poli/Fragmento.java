@@ -1,6 +1,7 @@
 package org.poli;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.CRC32;
 
@@ -121,7 +122,7 @@ public class Fragmento {
         this.tamanoHeader = tamanoHeader;
     }
 
-    public Fragmento(String recibido, InetAddress addr){
+    public Fragmento(String recibido, InetSocketAddress addr){
         String[] partes = recibido.split(":", 5);
         if (partes.length != 5) {
             return;
