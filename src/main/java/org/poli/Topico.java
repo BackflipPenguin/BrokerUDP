@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.zip.CRC32;
 
@@ -17,23 +16,25 @@ public class Topico {
     private HashMap<String, Mensaje> mensajes;
     private ArrayList<Usuario> suscriptores;
     private DatagramChannel canal;
-    private final SocketAddress servidor;
+    private final SocketAddress serverAddr;
+    private boolean server;
     private final int tamanoDatagrama;
     private ExecutorService executorService;
     Usuario usuario;
 
     private boolean subscripto = false;
 
-    public Topico(String nombre, String codigo, DatagramChannel canal, SocketAddress servidor, Usuario usuario, int tamanoDatagrama, ExecutorService executorService) {
+    public Topico(String nombre, String codigo, DatagramChannel canal, SocketAddress serverAddr, Usuario usuario, int tamanoDatagrama, boolean server, ExecutorService executorService) {
         this.nombre = nombre;
         this.codigo = codigo;
         this.mensajes = new HashMap<>();
         this.canal = canal;
         this.tamanoDatagrama = tamanoDatagrama;
         this.crc32 = new CRC32();
-        this.servidor = servidor;
+        this.serverAddr = serverAddr;
         this.usuario = usuario;
         this.executorService = executorService;
+        this.server = server;
         this.suscriptores = new ArrayList<>();
     }
 
@@ -70,13 +71,14 @@ public class Topico {
         if (mensaje.getEstado() == EstadoMensaje.CORRECTO){
             System.out.println("COMPLETADA LA RECEPCION DEL MENSAJE CON UUID: " + mensaje.getUuid());
             System.out.println(mensaje.getContenido());
-            if (mensaje.getContenido().equals("\\subscribe")) {
-                Mensaje finalMensaje = mensaje;
-                executorService.submit(() -> suscribir(finalMensaje.getCreador()) );
-            } else {
-                broadcast(mensaje);
+            if (server){
+                if (mensaje.getContenido().equals("\\subscribe")) {
+                    Mensaje finalMensaje = mensaje;
+                    executorService.submit(() -> suscribir(finalMensaje.getCreador()) );
+                } else {
+                    broadcast(mensaje);
+                }
             }
-
         }
     }
 
@@ -113,11 +115,11 @@ public class Topico {
     }
 
     public void enviar(Mensaje mensaje) throws IOException {
-        enviar(mensaje, this.servidor);
+        enviar(mensaje, this.serverAddr);
     }
     public void enviar(String contenidoMensaje) throws IOException {
         var mensaje = new Mensaje(contenidoMensaje, usuario, codigo, crc32, tamanoDatagrama);
-        enviar(mensaje, this.servidor);
+        enviar(mensaje, this.serverAddr);
     }
     public void enviar(Mensaje mensaje, SocketAddress destino) throws IOException {
 
@@ -155,16 +157,9 @@ public class Topico {
 
         System.out.println("ENVIANDO MENSAJE " + mensaje.getUuid() + " A: " + destino);
         var fragmentos = mensaje.generarFragmentos();
-        System.out.println(fragmentos.size());
 
         for (var f: fragmentos) {
             canal.send(ByteBuffer.wrap(f.getBytes()), destino);
         }
     }
-
-    public ArrayList<Mensaje> recibir(){
-
-        return null;
-    }
-
 }

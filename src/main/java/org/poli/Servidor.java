@@ -34,7 +34,7 @@ public class Servidor {
         DatagramChannel channel = DatagramChannel.open();
         channel.bind(localAddress);
 
-        System.out.println("UDP broker server started on port " + PORT);
+        System.out.println("UDP Broker Servidor iniciado en puerto: " + PORT);
         var socket = channel.socket();
 
         while (true) {
@@ -60,7 +60,7 @@ public class Servidor {
             var topicoDestino = topicos.get(f.getCodigoTopico());
             if (topicoDestino == null){
                 System.out.println("MENSAJE ENVIADO A TOPICO INEXISTENTE: " + f.getCodigoTopico() + " CREANDOLO.");
-                topicoDestino = new Topico("", f.getCodigoTopico(), channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, executorService);
+                topicoDestino = new Topico("", f.getCodigoTopico(), channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, true, executorService);
                 topicos.put(topicoDestino.getCodigo(), topicoDestino);
             }
 
@@ -110,7 +110,7 @@ public class Servidor {
     }
 
     public static void main(String[] args) throws IOException {
-        Servidor server = new Servidor( new InetSocketAddress(InetAddress.getLocalHost(), PORT));
+        Servidor server = new Servidor( new InetSocketAddress(PORT));
         server.start();
     }
 }

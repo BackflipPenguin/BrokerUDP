@@ -7,10 +7,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.CRC32;
@@ -21,12 +18,13 @@ public class Cliente {
     private HashMap<String, Topico> topicos;
     private Usuario yo;
     private InetSocketAddress serverAddr;
+    private ExecutorService executorService;
     public void enviar(String mensaje, String codigoTopico) throws IOException {
         var t = topicos.get(codigoTopico);
         if (t == null) {
             t = new Topico("", codigoTopico,
                     channel,
-                    serverAddr, yo, 1024, Executors.newFixedThreadPool(10));
+                    serverAddr, yo, 1024, false, executorService);
             topicos.put(t.getCodigo(), t);
         }
         t.enviar(mensaje);
@@ -38,7 +36,7 @@ public class Cliente {
        if (t == null) {
            t = new Topico("", codigoTopico,
                    channel,
-                   serverAddr, yo, 1024, Executors.newFixedThreadPool(10));
+                   serverAddr, yo, 1024, false, executorService);
            topicos.put(t.getCodigo(), t);
        }
        t.subscribirse();
@@ -84,25 +82,32 @@ public class Cliente {
         }
     }
 
-    public Cliente(DatagramChannel canal, Usuario yo, InetSocketAddress serverAddr){
+    public Cliente(DatagramChannel canal, Usuario yo, InetSocketAddress serverAddr, ExecutorService executorService){
         this.channel = canal;
         this.yo = yo;
         this.topicos = new HashMap<>();
         this.serverAddr = serverAddr;
+        this.executorService = executorService;
     }
 
 
     public static void main(String[] args) throws IOException {
         var channel = DatagramChannel.open();
-        var canalRecepcion = DatagramChannel.open();
+        var executorService = Executors.newFixedThreadPool(10);
+        var s = new Scanner(System.in);
         channel.bind(null);
+
         //channel.configureBlocking(true);
 
-        var yo = new Usuario(new InetSocketAddress(String.valueOf(canalRecepcion.socket().getLocalAddress()), canalRecepcion.socket().getLocalPort()), UUID.randomUUID().toString().substring(0, 5));
+        System.out.println("Ingrese la direccion de destino");
+        var addr = s.nextLine();
+        System.out.println("Ingrese el puerto de destino");
+        var puerto = s.nextLine();
+        var yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), UUID.randomUUID().toString().substring(0, 5));
+        var c = new Cliente(channel, yo, new InetSocketAddress(addr,Integer.parseInt(puerto)), executorService);
 
-        Cliente c = new Cliente(channel, yo, new InetSocketAddress("127.0.0.1", 12345));
-
-        c.subscribirse("t");
+        //c.subscribirse("t");
+        /*
         c.enviar(
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean dapibus scelerisque lacinia. Pellentesque purus metus, tempus eget varius eget, semper vitae ex. Cras leo dui, dignissim quis diam vel, tincidunt laoreet lacus. Vestibulum nec turpis quis mi scelerisque mollis in at dolor. Fusce ut tempus enim. Phasellus neque ligula, luctus sit amet enim quis, lobortis viverra diam. Suspendisse viverra tempus sagittis. Sed tincidunt orci at augue ultrices cursus. Sed sed ipsum velit.\n" +
                         "\n" +
@@ -121,8 +126,28 @@ public class Cliente {
                         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla sed molestie magna, quis tristique sapien. Phasellus nibh lectus, maximus in nisi vitae, auctor ullamcorper quam. Nunc accumsan ultrices est et faucibus. Suspendisse vel risus at arcu ullamcorper ultrices sit amet eget metus. Duis ut nisl ac lacus volutpat eleifend a non lacus. Ut egestas erat sit amet malesuada accumsan. Vivamus a porta dui. Duis nec quam eget lectus ultricies pharetra sit amet ac arcu. Morbi eu gravida diam. Donec placerat magna odio, ut tristique nibh viverra et. Duis in enim vitae dolor eleifend iaculis.\n" +
                         "\n" +
                         "Ut sed tincidunt ante. Mauris enim augue, egestas in vulputate sit amet, vehicula in diam. Nullam nec fermentum ipsum, nec fringilla erat. Vivamus semper purus urna, ac pretium purus euismod vel. Donec est nibh, imperdiet at viverra et, mattis eget odio. Ut vehicula risus sem, sed tincidunt metus hendrerit et. Suspendisse donec. ", "t");
+       */
+        executorService.submit( () -> {
+            try {
+                c.recibir();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
-        c.recibir();
+        while (true){
+            var input = s.nextLine();
+            var partes = input.split(":", 2);
+            if (partes.length < 2){
+                System.out.println("Debe especificar el tópico");
+            } else{
+                if (partes[1].equals("\\subscribe")){
+                    c.subscribirse(partes[0]);
+                } else {
+                    c.enviar(partes[1], partes[0]);
+                }
+            }
+        }
    }
     public boolean checkFragment(String s, long hash){
         CRC32 crc32 = new CRC32();
