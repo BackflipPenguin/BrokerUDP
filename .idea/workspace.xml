@@ -5,13 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1900ab8a-e4de-4ac7-a73f-ec41164d73a0" name="Changes" comment="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/poli/EstadoMensaje.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Mensaje.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Mensaje.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Usuario.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Usuario.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,7 +53,7 @@
     "WebServerToolWindowFactoryState": "false",
     "git-widget-placeholder": "master",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "/home/jorgito/Documentos/6_PoliChef",
+    "last_opened_file_path": "/home/jorgito/Documentos/prueba2",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -187,6 +186,17 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor" />
     <option name="LAST_COMMIT_MESSAGE" value="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor" />
@@ -198,6 +208,16 @@
           <properties class="java.lang.NullPointerException" package="java.lang" />
           <option name="timeStamp" value="9" />
         </breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/poli/Cliente.java</url>
+          <line>55</line>
+          <option name="timeStamp" value="25" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/poli/Cliente.java</url>
+          <line>49</line>
+          <option name="timeStamp" value="26" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
     <pin-to-top-manager>

@@ -12,7 +12,7 @@ public class Mensaje {
     private String uuid;
     private CRC32 crc32;
     private EstadoMensaje estado;
-    private int tamanoMaxDatagrama;
+    private int tamanoMaxDatagrama = 1024;
     private int totalFragmentos;
 
     private HashMap<Integer, Fragmento> fragmentos;
@@ -35,6 +35,7 @@ public class Mensaje {
         this.estado = EstadoMensaje.EN_PROGRESO;
         fragmentos = new HashMap<>();
         fragmentos.put(fragmentoInicial.getIndice(), fragmentoInicial);
+        joinFragmentosIfComplete();
     }
 
     public Mensaje(HashMap<Integer, Fragmento> fragmentos, int cantFragmentos){
@@ -48,8 +49,21 @@ public class Mensaje {
         this.estado = EstadoMensaje.CORRECTO;
     }
 
+    private void joinFragmentosIfComplete(){
+        if (this.fragmentos.size() == this.totalFragmentos){
+            ArrayList<String> contenidos = new ArrayList<>();
+            for (int i = 0; i < totalFragmentos; i++) {
+                contenidos.add(fragmentos.get(i).getTexto());
+            }
+            this.contenido = String.join("", contenidos);
+            this.estado = EstadoMensaje.CORRECTO;
+        }
+    }
+
     public void addFragmento(Fragmento f){
         fragmentos.put(f.getIndice(), f);
+        joinFragmentosIfComplete();
+        /*
         if (fragmentos.size() == totalFragmentos){
             ArrayList<String> contenidos = new ArrayList<>();
             for (int i = 0; i < totalFragmentos; i++) {
@@ -58,6 +72,8 @@ public class Mensaje {
             this.contenido = String.join("", contenidos);
             this.estado = EstadoMensaje.CORRECTO;
         }
+        */
+
 
     }
 
@@ -69,7 +85,7 @@ public class Mensaje {
                 new byte[0], this.codigoTopico, this.crc32).getTamanoHeader();
 
         tamanoDatagrama -= tamanoHeader;
-        int cantFragmentos = texto.length() / tamanoDatagrama;
+        int cantFragmentos = Math.max( (int) Math.ceil((double)texto.length()/ tamanoDatagrama), 1);
         int digitosExtra = String.valueOf(cantFragmentos).length() - 1;
         tamanoDatagrama -= digitosExtra * 2;
         /*
@@ -78,7 +94,7 @@ public class Mensaje {
         }*/
 
         this.fragmentos = new HashMap<>();
-        for (int i = 0; i <= cantFragmentos; i++) {
+        for (int i = 0; i < cantFragmentos; i++) {
             // no se me ocurrió una solución mejor :(
             if (i == 10) {
                 tamanoDatagrama -= 2;
@@ -94,7 +110,7 @@ public class Mensaje {
             if (texto.length() < indexfin) {
                 indexfin = texto.length();
             }
-            fragmentos.put(i, new Fragmento(creador, uuid, i, cantFragmentos + 1,
+            fragmentos.put(i, new Fragmento(creador, uuid, i, cantFragmentos,
                     texto.substring(i * tamanoDatagrama, indexfin).getBytes(), this.codigoTopico, crc32));
         }
 
