@@ -3,6 +3,7 @@ package org.poli;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.zip.CRC32;
 
 public class Fragmento {
@@ -15,6 +16,7 @@ public class Fragmento {
     private String codigoTopico;
     private byte[] envio;
     private CRC32 crc32;
+    private String uuidMensaje;
     private String texto;
 
     private int tamanoHeader;
@@ -51,19 +53,20 @@ public class Fragmento {
         this.totalPaquetes = totalPaquetes;
         this.texto = new String(contenido, StandardCharsets.UTF_8);
     }
-    public Fragmento(Usuario creador, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32) {
+    public Fragmento(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32) {
         this.creador = creador;
         this.indice = indice;
         this.contenido = contenido;
+        this.uuidMensaje = uuidMensaje;
         this.crc32 = crc32;
         this.totalPaquetes = totalPaquetes;
         this.texto = new String(contenido, StandardCharsets.UTF_8);
         this.codigoTopico = codigoTopico;
-        generateHeader(creador, indice, totalPaquetes, codigoTopico);
+        generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
     }
 
-    private void generateHeader(Usuario creador, int indice, int totalPaquetes, String codigoTopico){
-        this.header = creador + ":" + Integer.toString
+    private void generateHeader(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, String codigoTopico){
+        this.header = creador + ":" + uuidMensaje + ":" + Integer.toString
                 (indice) + ":" + Integer.toString(totalPaquetes) + ":" + codigoTopico + ":";
         this.tamanoHeader = this.header.length() * 2 + 8; // 8 bytes del CRC32, char = 2 bytes
     }
@@ -88,10 +91,7 @@ public class Fragmento {
     }
 
     public CRC32 getCrc32() {
-        if (this.crc32 != null)
-            return crc32;
-        else
-            return new CRC32();
+        return Objects.requireNonNullElseGet(this.crc32, CRC32::new);
     }
 
     public void setCrc32(CRC32 crc32) {
@@ -100,6 +100,14 @@ public class Fragmento {
 
     public void setTexto(String texto) {
         this.texto = texto;
+    }
+
+    public String getUuidMensaje() {
+        return uuidMensaje;
+    }
+
+    public void setUuidMensaje(String uuidMensaje) {
+        this.uuidMensaje = uuidMensaje;
     }
 
     public int getTotalPaquetes(){
@@ -123,17 +131,18 @@ public class Fragmento {
     }
 
     public Fragmento(String recibido, InetSocketAddress addr){
-        String[] partes = recibido.split(":", 5);
-        if (partes.length != 5) {
+        String[] partes = recibido.split(":", 6);
+        if (partes.length != 6) {
             return;
         }
-        creador = new Usuario(addr, partes[0]);
-        indice = Integer.parseInt(partes[1]);
-        totalPaquetes = Integer.parseInt(partes[2]);
-        this.codigoTopico = partes[3];
-        this.texto  = partes[4];
+        this.creador = new Usuario(addr, partes[0]);
+        this.uuidMensaje = partes[1];
+        this.indice = Integer.parseInt(partes[2]);
+        this.totalPaquetes = Integer.parseInt(partes[3]);
+        this.codigoTopico = partes[4];
+        this.texto  = partes[5];
         this.contenido = texto.getBytes(StandardCharsets.UTF_8);
-        generateHeader(creador, indice, totalPaquetes, codigoTopico);
+        generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
     }
     public String getTexto(){
         return texto;

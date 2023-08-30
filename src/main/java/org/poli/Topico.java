@@ -4,36 +4,35 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.zip.CRC32;
 
 public class Topico {
     private String nombre;
     private String codigo;
-    private CRC32 crc32;
-    private ArrayList<Mensaje> mensajes;
+    private final CRC32 crc32;
+    private HashMap<String, Mensaje> mensajes;
+    private ArrayList<Usuario> suscriptores;
     private DatagramChannel canal;
-    private SocketAddress servidor;
-    private Pattern patron;
-    private int tamanoDatagrama;
+    private final SocketAddress servidor;
+    private final int tamanoDatagrama;
+    private ExecutorService executorService;
     Usuario usuario;
 
-    public Topico(String nombre, String codigo, ArrayList<Mensaje> mensajes, DatagramChannel canal, Pattern patron, SocketAddress servidor, Usuario usuario, int tamanoDatagrama) {
+    public Topico(String nombre, String codigo, DatagramChannel canal, SocketAddress servidor, Usuario usuario, int tamanoDatagrama, ExecutorService executorService) {
         this.nombre = nombre;
         this.codigo = codigo;
-        this.mensajes = mensajes;
+        this.mensajes = new HashMap<>();
         this.canal = canal;
-        this.patron = patron;
         this.tamanoDatagrama = tamanoDatagrama;
         this.crc32 = new CRC32();
         this.servidor = servidor;
         this.usuario = usuario;
+        this.executorService = executorService;
+        this.suscriptores = new ArrayList<>();
     }
-
-    private HashSet<Usuario> suscriptores;
 
     public String getNombre() {
         return nombre;
@@ -51,61 +50,85 @@ public class Topico {
         this.codigo = codigo;
     }
 
-    public ArrayList<Mensaje> getMensajes() {
-        return mensajes;
-    }
-
-    public void setMensajes(ArrayList<Mensaje> mensajes) {
-        this.mensajes = mensajes;
-    }
-
     public DatagramChannel getCanal() {
         return canal;
+    }
+
+    public void addFragmento(Fragmento fragmento){
+        var mensaje = mensajes.get(fragmento.getUuidMensaje());
+        if (mensaje == null){
+            System.out.println("RECIBIENDO NUEVO MENSAJE CON UUID: " + fragmento.getUuidMensaje());
+            mensaje = new Mensaje(fragmento);
+            mensajes.put(mensaje.getUuid(), mensaje);
+        }
+        else {
+            mensaje.addFragmento(fragmento);
+        }
+        if (mensaje.getEstado() == EstadoMensaje.CORRECTO){
+            System.out.println("COMPLETADA LA RECEPCION DEL MENSAJE CON UUID: " + mensaje.getUuid());
+            System.out.println(mensaje.getContenido());
+            if (mensaje.getContenido().equals("\\subscribe")) {
+                Mensaje finalMensaje = mensaje;
+                executorService.submit(() -> suscribir(finalMensaje.getCreador()) );
+            } else {
+                broadcast(mensaje);
+            }
+
+        }
     }
 
     public void setCanal(DatagramChannel canal) {
         this.canal = canal;
     }
 
-    public Pattern getPatron() {
-        return patron;
-    }
-
-    public void setPatron(Pattern patron) {
-        this.patron = patron;
-    }
 
     public void suscribir(Usuario usuario){
         suscriptores.add(usuario);
     }
 
-    public void broadcast(Mensaje mensaje){
-
+    public void broadcast(Mensaje mensaje ) {
+        for (Usuario s:
+             suscriptores) {
+            executorService.submit(() -> {
+                try {
+                    enviar(mensaje, s.getDireccion());
+                } catch (IOException e) {
+                    System.out.println("Error en broadcast enviando a usuario: " + s.getNombre() + "\n" + e );
+                }
+            });
+        }
     }
 
     public void enviar(Mensaje mensaje) throws IOException {
+        enviar(mensaje, this.servidor);
+    }
+    public void enviar(String contenidoMensaje) throws IOException {
+        var mensaje = new Mensaje(contenidoMensaje, usuario, codigo, crc32, tamanoDatagrama);
+        enviar(mensaje, this.servidor);
+    }
+    public void enviar(Mensaje mensaje, SocketAddress destino) throws IOException {
+
+        /*
         int tamanoDatagrama = this.tamanoDatagrama;
         String texto = mensaje.toString();
         int tamanoHeader = new Fragmento(usuario, 1, 1,
                 new byte[0], this.codigo, crc32).getTamanoHeader();
         tamanoDatagrama -= tamanoHeader;
         int cantFragmentos = texto.length() / tamanoDatagrama ;
-        if (cantFragmentos > 9 && cantFragmentos < 100){
-            tamanoDatagrama -= 2;
-        } else if (cantFragmentos > 100) {
-            tamanoDatagrama -= 4;
-        }
-/*
-        if (cantFragmentos == 0){
-            canal.send(ByteBuffer.wrap(texto.getBytes()), servidor);
-        }*/
-        ArrayList<Fragmento> fragmentos = new ArrayList<>();
+        int digitosExtra = String.valueOf(cantFragmentos).length() - 1;
+        tamanoDatagrama -= digitosExtra;
+       ArrayList<Fragmento> fragmentos = new ArrayList<>();
 
 
         for (int i = 0; i <= cantFragmentos; i++){
+            // no se me ocurrió una solución mejor :(
             if (i == 10){
                 tamanoDatagrama -= 2;
             } else if (i == 100) {
+                tamanoDatagrama -= 2;
+            } else if (i == 1000) {
+                tamanoDatagrama -= 2;
+            } else if (i == 10000) {
                 tamanoDatagrama -= 2;
             }
 
@@ -115,10 +138,12 @@ public class Topico {
             }
             fragmentos.add(new Fragmento(usuario, i, cantFragmentos,
                     texto.substring(i * tamanoDatagrama, indexfin).getBytes(), this.codigo,  crc32));
-        }
+        } */
+
+        var fragmentos = mensaje.generarFragmentos();
 
         for (var f: fragmentos) {
-            canal.send(ByteBuffer.wrap(f.getBytes()), servidor);
+            canal.send(ByteBuffer.wrap(f.getBytes()), destino);
         }
     }
 

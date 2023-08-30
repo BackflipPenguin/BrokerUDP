@@ -1,5 +1,6 @@
 package org.poli;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,7 +9,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -22,10 +22,8 @@ public class Servidor {
     private Map<String, Map<InetAddress, Long>> topicSubscriptions;
     private ExecutorService executorService;
 
-    public Servidor() {
-        topicSubscriptions = new ConcurrentHashMap<>();
-        executorService = Executors.newFixedThreadPool(10);
-    }
+    private InetSocketAddress localAddress;
+    private HashMap<String, Topico> topicos;
 
     public boolean checkFragment(String s, long hash){
         CRC32 crc32 = new CRC32();
@@ -33,8 +31,11 @@ public class Servidor {
         return hash == crc32.getValue();
     }
     public void start() throws IOException {
-        DatagramSocket socket = new DatagramSocket(PORT);
+        DatagramChannel channel = DatagramChannel.open();
+        channel.bind(localAddress);
+
         System.out.println("UDP broker server started on port " + PORT);
+        var socket = channel.socket();
 
         while (true) {
             byte[] buffer = new byte[1024];
@@ -42,45 +43,28 @@ public class Servidor {
             socket.receive(packet);
 
             var data = packet.getData();
+
             // recibir mensaje
-            String message = new String(data, 8, packet.getLength() -8, StandardCharsets.UTF_8);
+            String mensaje = new String(data, 8, packet.getLength() -8, StandardCharsets.UTF_8);
             byte[] longbytes = new byte[8];
             System.arraycopy(data, 0, longbytes, 0, 8);
             long hash = Utils.bytesToLong(longbytes);
             System.out.println(hash);
-            if (!checkFragment(message, hash)){
-                var f = new Fragmento(message, new InetSocketAddress(packet.getAddress(), packet.getPort()));
+            if (!checkFragment(mensaje, hash)){
+                var f = new Fragmento(mensaje, new InetSocketAddress(packet.getAddress(), packet.getPort()));
                 System.out.println(Arrays.toString(f.getBytes()));
                 System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
-            int fragmentosTotales = 0;
-            HashMap<Integer, Fragmento> fragmentos = new HashMap<>();
-            Fragmento f = new Fragmento(message, new InetSocketAddress(packet.getAddress(), packet.getPort()));
-            fragmentosTotales = f.getTotalPaquetes() + 1;
-            fragmentos.put(f.getIndice(),f);
-            for (int i = 1; i < fragmentosTotales; i++) {
-                socket.receive(packet);
-                data = packet.getData();
-                message = new String(data, 8, packet.getLength() - 8);
-                System.arraycopy(data,0, longbytes, 0, 8);
-
-                if (!checkFragment(message, Utils.bytesToLong(longbytes))){
-                    System.out.println("FRAGMENTO INCORRECTO: " + f.getIndice());
-                }
-                // System.out.println((new Date()).toString() + ": " +message);
-                Fragmento nuevoFragmento = new Fragmento(message, new InetSocketAddress(packet.getAddress(), packet.getPort()) );
-                fragmentos.put(nuevoFragmento.getIndice(), nuevoFragmento);
+            Fragmento f = new Fragmento(mensaje, new InetSocketAddress(packet.getAddress(), packet.getPort()));
+            var topicoDestino = topicos.get(f.getCodigoTopico());
+            if (topicoDestino == null){
+                System.out.println("MENSAJE ENVIADO A TOPICO INEXISTENTE: " + f.getCodigoTopico() + " CREANDOLO.");
+                topicoDestino = new Topico("", f.getCodigoTopico(), channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, executorService);
+                topicos.put(topicoDestino.getCodigo(), topicoDestino);
             }
-            Mensaje mensaje = new Mensaje(fragmentos, fragmentosTotales);
-            System.out.println("MENSAJE: " + mensaje.getCreador().getNombre() + ": " + mensaje.getContenido());
 
-
-            if (mensaje.getContenido().equals("\\subscribe")) {
-                executorService.submit(() -> subscribe(mensaje.getCodigoTopico(), packet.getAddress()));
-            } else {
-              //  executorService.submit(() -> publish(mensaje.getCodigoTopico(), mensaje.getContenido(), packet.getAddress()));
-            }
+            topicoDestino.addFragmento(f);
         }
     }
 
@@ -116,8 +100,14 @@ public class Servidor {
         socket.send(ByteBuffer.wrap(buffer), new InetSocketAddress(address, PORT));
     }
 
+    public Servidor(InetSocketAddress localAddress){
+        this.localAddress = localAddress;
+        this.executorService = Executors.newFixedThreadPool(10);
+        this.topicos = new HashMap<>();
+    }
+
     public static void main(String[] args) throws IOException {
-        Servidor server = new Servidor();
+        Servidor server = new Servidor( new InetSocketAddress(InetAddress.getLocalHost(), PORT));
         server.start();
     }
 }
