@@ -9,15 +9,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1900ab8a-e4de-4ac7-a73f-ec41164d73a0" name="Changes" comment="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor">
-      <change afterPath="$PROJECT_DIR$/.idea/artifacts/BrokerUDP_jar.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="1900ab8a-e4de-4ac7-a73f-ec41164d73a0" name="Changes" comment="Implementada interfaz de texto">
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,8 +22,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Class" />
         <option value="Enum" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -182,7 +177,7 @@
       <workItem from="1692822009856" duration="989000" />
       <workItem from="1693346104071" duration="12370000" />
       <workItem from="1693410596594" duration="1157000" />
-      <workItem from="1693413385377" duration="6285000" />
+      <workItem from="1693413385377" duration="10452000" />
     </task>
     <task id="LOCAL-00001" summary="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor">
       <option name="closed" value="true" />
@@ -192,7 +187,15 @@
       <option name="project" value="LOCAL" />
       <updated>1692218223718</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Implementada interfaz de texto">
+      <option name="closed" value="true" />
+      <created>1693420606356</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1693420606356</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -211,7 +214,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor" />
+    <MESSAGE value="Implementada interfaz de texto" />
+    <option name="LAST_COMMIT_MESSAGE" value="Implementada interfaz de texto" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -222,7 +226,7 @@
         </breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/org/poli/Cliente.java</url>
-          <line>53</line>
+          <line>52</line>
           <option name="timeStamp" value="29" />
         </line-breakpoint>
       </breakpoints>
