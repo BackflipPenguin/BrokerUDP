@@ -14,7 +14,6 @@ import java.util.zip.CRC32;
 
 public class Cliente {
     private DatagramChannel channel;
-
     private HashMap<String, Topico> topicos;
     private Usuario yo;
     private InetSocketAddress serverAddr;
