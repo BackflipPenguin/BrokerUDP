@@ -68,6 +68,7 @@ public class Servidor {
         }
     }
 
+    /*
     private void subscribe(String topic, InetAddress address) {
         Map<InetAddress, Long> subscriptions = topicSubscriptions.get(topic);
         if (subscriptions == null) {
@@ -99,6 +100,8 @@ public class Servidor {
         DatagramChannel socket = DatagramChannel.open();
         socket.send(ByteBuffer.wrap(buffer), new InetSocketAddress(address, PORT));
     }
+
+     */
 
     public Servidor(InetSocketAddress localAddress){
         this.localAddress = localAddress;

@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.zip.CRC32;
 
@@ -20,6 +21,8 @@ public class Topico {
     private final int tamanoDatagrama;
     private ExecutorService executorService;
     Usuario usuario;
+
+    private boolean subscripto = false;
 
     public Topico(String nombre, String codigo, DatagramChannel canal, SocketAddress servidor, Usuario usuario, int tamanoDatagrama, ExecutorService executorService) {
         this.nombre = nombre;
@@ -82,16 +85,26 @@ public class Topico {
     }
 
 
+    public void subscribirse() throws IOException {
+       enviar("\\subscribe");
+       subscripto = true;
+    }
     public void suscribir(Usuario usuario){
         suscriptores.add(usuario);
+        System.out.println("EL USUARIO " + usuario.getNombre() + " HA SIDO SUSCRIPTO AL TOPICO: " + codigo);
     }
 
     public void broadcast(Mensaje mensaje ) {
+        System.out.println("INICIANDO BROADCAST DEL MENSAJE CON UUID: " + mensaje.getUuid());
         for (Usuario s:
              suscriptores) {
             executorService.submit(() -> {
                 try {
-                    enviar(mensaje, s.getDireccion());
+                    if (!(s.getNombre().equals(mensaje.getCreador().getNombre()))){
+
+                        System.out.println("ENVIANDO MENSAJE " + mensaje.getUuid() + " A: " + s.getNombre());
+                        enviar(mensaje, s.getDireccion());
+                    }
                 } catch (IOException e) {
                     System.out.println("Error en broadcast enviando a usuario: " + s.getNombre() + "\n" + e );
                 }
@@ -140,7 +153,9 @@ public class Topico {
                     texto.substring(i * tamanoDatagrama, indexfin).getBytes(), this.codigo,  crc32));
         } */
 
+        System.out.println("ENVIANDO MENSAJE " + mensaje.getUuid() + " A: " + destino);
         var fragmentos = mensaje.generarFragmentos();
+        System.out.println(fragmentos.size());
 
         for (var f: fragmentos) {
             canal.send(ByteBuffer.wrap(f.getBytes()), destino);
