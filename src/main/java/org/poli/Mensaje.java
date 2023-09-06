@@ -85,9 +85,10 @@ public class Mensaje {
                 new byte[0], this.codigoTopico, this.crc32).getTamanoHeader();
 
         tamanoDatagrama -= tamanoHeader;
-        int cantFragmentos = Math.max( (int) Math.ceil((double)texto.length()/ tamanoDatagrama), 1);
-        int digitosExtra = String.valueOf(cantFragmentos).length() - 1;
+        int cantFragmentos = Math.max( (int) Math.ceil((double) texto.getBytes().length / tamanoDatagrama), 1);
+        int digitosExtra = String.valueOf(cantFragmentos).length() - 1 ;
         tamanoDatagrama -= digitosExtra * 2;
+//        tamanoDatagrama -= 7; // ESTO ES UNA TORTURA
         /*
         if (cantFragmentos == 0){
             canal.send(ByteBuffer.wrap(texto.getBytes()), servidor);
@@ -106,12 +107,13 @@ public class Mensaje {
                 tamanoDatagrama -= 2;
             }
 
-            int indexfin = tamanoDatagrama * (i + 1);
+            var cant = tamanoDatagrama;
+            int indexfin = tamanoDatagrama * (i + 1)  + cant;
             if (texto.length() < indexfin) {
-                indexfin = texto.length();
+                cant = indexfin - texto.length();
             }
             fragmentos.put(i, new Fragmento(creador, uuid, i, cantFragmentos,
-                    texto.substring(i * tamanoDatagrama, indexfin).getBytes(), this.codigoTopico, crc32));
+                    Utils.trimByBytes(texto, i * tamanoDatagrama, tamanoDatagrama).getBytes(), this.codigoTopico, crc32));
         }
 
         return fragmentos.values();

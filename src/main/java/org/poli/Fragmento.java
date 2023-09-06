@@ -66,9 +66,9 @@ public class Fragmento {
     }
 
     private void generateHeader(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, String codigoTopico){
-        this.header = creador + ":" + uuidMensaje + ":" + Integer.toString
+        this.header = creador.getNombre() + ":" + uuidMensaje + ":" + Integer.toString
                 (indice) + ":" + Integer.toString(totalPaquetes) + ":" + codigoTopico + ":";
-        this.tamanoHeader = this.header.length() * 2 + 8; // 8 bytes del CRC32, char = 2 bytes
+        this.tamanoHeader = (this.header.length() * 2) + 8; // 8 bytes del CRC32, char = 2 bytes
     }
     public void setTotalPaquetes(int totalPaquetes) {
         this.totalPaquetes = totalPaquetes;
@@ -184,7 +184,6 @@ public class Fragmento {
         System.out.println(hash);
         System.out.println(new String(envio, StandardCharsets.UTF_8));
         return Utils.arrayConcat(Utils.longToBytes(hash), envio);
-
     }
 
 
