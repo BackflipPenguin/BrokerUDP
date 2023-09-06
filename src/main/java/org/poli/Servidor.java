@@ -17,7 +17,6 @@ import java.util.zip.CRC32;
 
 public class Servidor {
 
-    private static final int PORT = 12345;
 
     private Map<String, Map<InetAddress, Long>> topicSubscriptions;
     private ExecutorService executorService;
@@ -34,7 +33,7 @@ public class Servidor {
         DatagramChannel channel = DatagramChannel.open();
         channel.bind(localAddress);
 
-        System.out.println("UDP Broker Servidor iniciado en puerto: " + PORT);
+        System.out.println("UDP Broker Servidor iniciado en puerto: " + this.localAddress.getPort());
         var socket = channel.socket();
 
         while (true) {
@@ -110,7 +109,10 @@ public class Servidor {
     }
 
     public static void main(String[] args) throws IOException {
-        Servidor server = new Servidor( new InetSocketAddress(PORT));
+        var s = new Scanner(System.in);
+        System.out.println("Ingrese el puerto a utilizar: ");
+        var puerto = s.nextInt();
+        Servidor server = new Servidor( new InetSocketAddress(puerto));
         server.start();
     }
 }

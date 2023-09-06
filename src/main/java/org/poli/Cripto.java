@@ -9,7 +9,8 @@ import java.security.*;
 import java.util.Arrays;
 
 public class Cripto {
-    /*private final KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+    /*
+    private final KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
 
     private KeyPair pair = generator.generateKeyPair();*/
     private PrivateKey privateKey;
