@@ -2,8 +2,6 @@ package org.poli;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
@@ -98,11 +96,13 @@ public class Cliente {
 
         //channel.configureBlocking(true);
 
-        System.out.println("Ingrese la direccion de destino");
+        System.out.println("Ingrese la direccion de destino:");
         var addr = s.nextLine();
-        System.out.println("Ingrese el puerto de destino");
+        System.out.println("Ingrese el puerto de destino:");
         var puerto = s.nextLine();
-        var yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), UUID.randomUUID().toString().substring(0, 5));
+        System.out.println("Ingrese su nombre de usuario:");
+        var nombre = s.nextLine();
+        var yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), nombre);
         var c = new Cliente(channel, yo, new InetSocketAddress(addr,Integer.parseInt(puerto)), executorService);
 
         //c.subscribirse("t");
