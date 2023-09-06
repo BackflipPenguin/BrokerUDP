@@ -24,7 +24,6 @@ public class Cripto {
         this.publicKey = pair.getPublic();
     }
 
-    // Falta hacer un metodo que encripte y otro que desencripte
     public byte[] encriptar(String mensaje) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher encryptCipher = Cipher.getInstance("RSA");
         encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);

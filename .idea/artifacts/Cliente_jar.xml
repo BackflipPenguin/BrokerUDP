@@ -1,5 +1,5 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="Cliente.jar">
+  <artifact type="jar" name="Cliente:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/Cliente_jar</output-path>
     <root id="archive" name="BrokerUDP.jar">
       <element id="directory" name="META-INF">

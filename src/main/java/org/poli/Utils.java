@@ -2,6 +2,10 @@ package org.poli;
 
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 
 public class Utils {
     static <T> T arrayConcat(T array1, T array2) {
@@ -27,6 +31,27 @@ public class Utils {
         System.arraycopy(array2, 0, result, len1, len2);
 
         return result;
+    }
+    static String trimByBytes(String str,int start,  int lengthOfBytes) {
+        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+
+        if (lengthOfBytes < buffer.limit()) {
+            if (start + lengthOfBytes > buffer.limit())
+                buffer = buffer.slice(start, buffer.limit() - start);
+            else
+                buffer = buffer.slice(start, lengthOfBytes);
+        }
+
+        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
+        decoder.onMalformedInput(CodingErrorAction.IGNORE);
+
+        try {
+            return decoder.decode(buffer).toString();
+        } catch (CharacterCodingException e) {
+            // We will never get here.
+            throw new RuntimeException(e);
+        }
     }
 
     public static byte[] longToBytes(long x) {

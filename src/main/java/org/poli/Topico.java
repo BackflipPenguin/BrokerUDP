@@ -159,7 +159,8 @@ public class Topico {
         var fragmentos = mensaje.generarFragmentos();
 
         for (var f: fragmentos) {
-            canal.send(ByteBuffer.wrap(f.getBytes()), destino);
+            var bytes = f.getBytes();
+            canal.send(ByteBuffer.wrap(bytes), destino);
         }
     }
 }

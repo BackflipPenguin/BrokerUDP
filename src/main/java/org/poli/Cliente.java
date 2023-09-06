@@ -1,10 +1,14 @@
 package org.poli;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -75,7 +79,6 @@ public class Cliente {
                 topicos.put(topicoDestino.getCodigo(), topicoDestino);
             }
             */
-
         }
     }
 
@@ -140,10 +143,20 @@ public class Cliente {
             if (partes.length < 2){
                 System.out.println("Debe especificar el tópico");
             } else{
-                if (partes[1].equals("\\subscribe")){
+                if (partes[1].equals("\\subscribe")) {
                     c.subscribirse(partes[0]);
                 } else {
-                    c.enviar(partes[1], partes[0]);
+                    if(partes[1].startsWith("\\f")){
+                        var fn = partes[1].split(":", 2)[1];
+                        try {
+                            var msg = Files.readString(Path.of(fn));
+                            c.enviar(msg, partes[0]);
+                        } catch (NoSuchFileException e){
+                            System.out.println("Archivo no encontrado: " + fn);
+                        }
+                    } else {
+                        c.enviar(partes[1], partes[0]);
+                    }
                 }
             }
         }
