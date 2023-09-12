@@ -7,14 +7,12 @@ import javax.crypto.NoSuchPaddingException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Arrays;
+import java.util.Base64;
 
 public class Cripto {
-    /*
-    private final KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-
-    private KeyPair pair = generator.generateKeyPair();*/
     private PrivateKey privateKey;
     private PublicKey publicKey;
+    Signature dsa;
 
     public Cripto() throws NoSuchAlgorithmException{
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
@@ -22,26 +20,60 @@ public class Cripto {
         KeyPair pair = keyGen.generateKeyPair();
         this.privateKey = pair.getPrivate();
         this.publicKey = pair.getPublic();
+        dsa = Signature.getInstance("SHA256withRSA");
     }
 
-    public byte[] encriptar(String mensaje) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    public byte[] generarFirma(byte[] mensaje) throws SignatureException {
+        try {
+            dsa.initSign(privateKey);
+            dsa.update(mensaje);
+            return dsa.sign();
+
+//            return Base64.getEncoder().encodeToString(s);
+
+        } catch (Exception e){
+            System.out.println("Error generando firma");
+            e.printStackTrace();
+        }
+        return new byte[]{0};
+   }
+
+   public boolean verificarFirma(byte[] mensaje, byte[] firma, PublicKey autor) throws InvalidKeyException, SignatureException {
+        dsa.initVerify(autor);
+        dsa.update(mensaje);
+        return dsa.verify(firma);
+   }
+
+    public byte[] encriptar(String mensaje, PublicKey pubKeyDestino) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher encryptCipher = Cipher.getInstance("RSA");
-        encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        encryptCipher.init(Cipher.ENCRYPT_MODE, pubKeyDestino);
         byte [] mensajeBytes = mensaje.getBytes(StandardCharsets.UTF_8);
-        byte[] mensajeEncriptadoBytes =encryptCipher.doFinal(mensajeBytes);
-        System.out.println(Arrays.toString(mensajeEncriptadoBytes));
-        return mensajeEncriptadoBytes;
+        // System.out.println(Arrays.toString(mensajeEncriptadoBytes));
+        return encryptCipher.doFinal(mensajeBytes);
     }
-    public void desencriptar(byte[] mensajeEncriptadoBytes) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    public String desencriptar(byte[] mensajeEncriptadoBytes) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher decryptCipher = Cipher.getInstance("RSA");
         decryptCipher.init(Cipher.DECRYPT_MODE, privateKey);
         byte[] mensajeDesencriptadoBytes = decryptCipher.doFinal(mensajeEncriptadoBytes);
-        String mensajeDesencriptado = new String(mensajeDesencriptadoBytes, StandardCharsets.UTF_8);
-        System.out.println(mensajeDesencriptado);
+        return new String(mensajeDesencriptadoBytes, StandardCharsets.UTF_8);
     }
-    public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException {
-        Cripto cripto = new Cripto();
-        byte[] mensajeEncriptado = cripto.encriptar("Hola perro");
-        cripto.desencriptar(mensajeEncriptado);
+
+    public PrivateKey getPrivateKey() {
+        return privateKey;
+    }
+
+    public PublicKey getPublicKey() {
+        return publicKey;
+    }
+
+    public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException, SignatureException {
+        String mensaje = "ANASHEX";
+        Cripto cripto1 = new Cripto();
+        Cripto cripto2 = new Cripto();
+
+        byte[] mensajeEncriptado = cripto1.encriptar("Hola perro", cripto2.getPublicKey());
+        System.out.println(cripto2.desencriptar(mensajeEncriptado));
+        var firma = cripto1.generarFirma(mensaje.getBytes(StandardCharsets.UTF_8));
+        System.out.println(cripto2.verificarFirma(mensaje.getBytes(StandardCharsets.UTF_8), firma, cripto1.getPublicKey()));
     }
 }

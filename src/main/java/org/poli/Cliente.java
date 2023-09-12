@@ -8,12 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.CRC32;
 
 public class Cliente {
+    private Cripto cripto;
     private DatagramChannel channel;
     private HashMap<String, Topico> topicos;
     private Usuario yo;
@@ -85,12 +87,13 @@ public class Cliente {
         }
     }
 
-    public Cliente(DatagramChannel canal, Usuario yo, InetSocketAddress serverAddr, ExecutorService executorService){
+    public Cliente(DatagramChannel canal, Usuario yo, InetSocketAddress serverAddr, ExecutorService executorService) throws NoSuchAlgorithmException {
         this.channel = canal;
         this.yo = yo;
         this.topicos = new HashMap<>();
         this.serverAddr = serverAddr;
         this.executorService = executorService;
+        this.cripto = new Cripto();
         topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, serverAddr, yo, 1024, false, executorService));
     }
 

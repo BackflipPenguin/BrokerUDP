@@ -21,9 +21,7 @@ public class Topico {
     private final int tamanoDatagrama;
     private ExecutorService executorService;
     Usuario usuario;
-
     private Topico topicoSYS;
-
     private boolean subscripto = false;
 
     public Topico(String nombre, String codigo, DatagramChannel canal, SocketAddress serverAddr, Usuario usuario, int tamanoDatagrama, boolean server, ExecutorService executorService) {
@@ -58,6 +56,74 @@ public class Topico {
         return nombre;
     }
 
+    public CRC32 getCrc32() {
+        return crc32;
+    }
+
+    public HashMap<String, Mensaje> getMensajes() {
+        return mensajes;
+    }
+
+    public void setMensajes(HashMap<String, Mensaje> mensajes) {
+        this.mensajes = mensajes;
+    }
+
+    public ArrayList<Usuario> getSuscriptores() {
+        return suscriptores;
+    }
+
+    public void setSuscriptores(ArrayList<Usuario> suscriptores) {
+        this.suscriptores = suscriptores;
+    }
+
+    public SocketAddress getServerAddr() {
+        return serverAddr;
+    }
+
+    public boolean isServer() {
+        return server;
+    }
+
+    public void setServer(boolean server) {
+        this.server = server;
+    }
+
+    public int getTamanoDatagrama() {
+        return tamanoDatagrama;
+    }
+
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
+
+    public void setExecutorService(ExecutorService executorService) {
+        this.executorService = executorService;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
+
+    public Topico getTopicoSYS() {
+        return topicoSYS;
+    }
+
+    public void setTopicoSYS(Topico topicoSYS) {
+        this.topicoSYS = topicoSYS;
+    }
+
+    public boolean isSubscripto() {
+        return subscripto;
+    }
+
+    public void setSubscripto(boolean subscripto) {
+        this.subscripto = subscripto;
+    }
+
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
@@ -74,7 +140,28 @@ public class Topico {
         return canal;
     }
 
-    public void addFragment(Fragmento fragmento) throws IOException {
+    private String handleCommand(String[] sections, Mensaje mensaje, Fragmento fragmento) throws IOException {
+        switch (sections[1]) {
+            case ("SUB") -> {
+                executorService.submit(() -> suscribir(mensaje.getCreador()));
+                return "SUB";
+            }
+            case ("ACK") -> {
+                if (sections.length != 4)
+                    enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\ARG", fragmento.getCreador().getDireccion());
+                try {
+                    mensajes.get(sections[2]).ackFragment(Integer.parseInt(sections[3]));
+                } catch (NullPointerException e){
+                    enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\NOMSG", fragmento.getCreador().getDireccion());
+                }
+                return "ACK";
+            }
+        }
+        return null;
+    }
+
+    public String addFragment(Fragmento fragmento) throws IOException {
+        String cmd = "MSG";
         boolean ack = true;
         var mensaje = mensajes.get(fragmento.getUuidMensaje());
         if (mensaje == null){
@@ -91,22 +178,10 @@ public class Topico {
             System.out.println(mensaje.getContenido());
                 if (mensaje.getContenido().startsWith("\\")) {
                     var sections = mensaje.getContenido().split("\\\\");
-                    switch (sections[1]) {
-                        case ("SUB") -> {
-                            Mensaje finalMensaje = mensaje;
-                            executorService.submit(() -> suscribir(finalMensaje.getCreador()));
-                        }
-                        case ("ACK") -> {
-                            if (sections.length != 4)
-                                enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\ARG", fragmento.getCreador().getDireccion());
-                            try {
-                                mensajes.get(sections[2]).ackFragment(Integer.parseInt(sections[3]));
-                            } catch (NullPointerException e){
-                                enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\NOMSG", fragmento.getCreador().getDireccion());
-                            }
-                            ack = false;
-                        }
-                    }
+                    cmd = handleCommand(sections, mensaje, fragmento);
+                    if (cmd.equals("ACK"))
+                        ack = false;
+
                 } else {
                     Mensaje finalMensaje1 = mensaje;
                     executorService.submit(() -> {
@@ -118,6 +193,7 @@ public class Topico {
         if (ack){
             enviarACK(fragmento);
         }
+        return cmd;
     }
 
     public void setCanal(DatagramChannel canal) {
@@ -134,7 +210,7 @@ public class Topico {
     }
     public void enviarACK(Fragmento f) throws IOException {
         System.out.println("ENVIANDO ACK DEL FRAGMENTO: " + f.getIndice() + " CORRESPONDIENTE AL MENSAJE CON UUID:" + f.getUuidMensaje() + " A: " + f.getCreador().getDireccion());
-        enviarSYS( "\\ACK\\" + f.getUuidMensaje() + "\\" + f.getIndice(), f.getCreador().getDireccion());
+        enviar( "\\ACK\\" + f.getUuidMensaje() + "\\" + f.getIndice(), f.getCreador().getDireccion());
     }
     public void broadcast(Mensaje mensaje ) {
         System.out.println("INICIANDO BROADCAST DEL MENSAJE CON UUID: " + mensaje.getUuid());
@@ -167,8 +243,11 @@ public class Topico {
     }
 
     public void enviar(String contenidoMensaje) throws IOException {
+        enviar(contenidoMensaje, this.serverAddr);
+    }
+    public void enviar(String contenidoMensaje, SocketAddress destino) throws IOException {
         var mensaje = new Mensaje(contenidoMensaje, usuario, codigo, crc32, tamanoDatagrama);
-        enviar(mensaje, this.serverAddr);
+        enviar(mensaje, destino);
     }
     public void enviar(Mensaje mensaje, SocketAddress destino) throws IOException {
         // agregar mensaje a los mensajes del canal
