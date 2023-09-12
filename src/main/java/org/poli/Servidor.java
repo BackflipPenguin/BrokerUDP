@@ -1,28 +1,20 @@
 package org.poli;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.CRC32;
 
 public class Servidor {
 
-
-    private Map<String, Map<InetAddress, Long>> topicSubscriptions;
-    private ExecutorService executorService;
-
-    private InetSocketAddress localAddress;
-    private HashMap<String, Topico> topicos;
+    private final ExecutorService executorService;
+    private final InetSocketAddress localAddress;
+    private final HashMap<String, Topico> topicos;
 
     public boolean checkFragment(String s, long hash){
         CRC32 crc32 = new CRC32();
@@ -32,6 +24,7 @@ public class Servidor {
     public void start() throws IOException {
         DatagramChannel channel = DatagramChannel.open();
         channel.bind(localAddress);
+        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, true, executorService));
 
         System.out.println("UDP Broker Servidor iniciado en puerto: " + this.localAddress.getPort());
         var socket = channel.socket();
@@ -49,6 +42,7 @@ public class Servidor {
             System.arraycopy(data, 0, longbytes, 0, 8);
             long hash = Utils.bytesToLong(longbytes);
             System.out.println(hash);
+            System.out.println("RECEPCION DE: " + packet.getAddress() + " " + packet.getPort());
             if (!checkFragment(mensaje, hash)){
                 var f = new Fragmento(mensaje, new InetSocketAddress(packet.getAddress(), packet.getPort()));
                 System.out.println(Arrays.toString(f.getBytes()));
@@ -59,48 +53,13 @@ public class Servidor {
             var topicoDestino = topicos.get(f.getCodigoTopico());
             if (topicoDestino == null){
                 System.out.println("MENSAJE ENVIADO A TOPICO INEXISTENTE: " + f.getCodigoTopico() + " CREANDOLO.");
-                topicoDestino = new Topico("", f.getCodigoTopico(), channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, true, executorService);
+                topicoDestino = new Topico("", f.getCodigoTopico(), channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, true, topicos.get("SYS"), executorService);
                 topicos.put(topicoDestino.getCodigo(), topicoDestino);
             }
 
-            topicoDestino.addFragmento(f);
+            topicoDestino.addFragment(f);
         }
     }
-
-    /*
-    private void subscribe(String topic, InetAddress address) {
-        Map<InetAddress, Long> subscriptions = topicSubscriptions.get(topic);
-        if (subscriptions == null) {
-            subscriptions = new ConcurrentHashMap<>();
-            topicSubscriptions.put(topic, subscriptions);
-        }
-
-        subscriptions.put(address, System.currentTimeMillis());
-    }
-
-    private void publish(String topic, String message, InetAddress address) {
-        Map<InetAddress, Long> subscriptions = topicSubscriptions.get(topic);
-        if (subscriptions != null) {
-            for (InetAddress subscriberAddress : subscriptions.keySet()) {
-                if (subscriberAddress != address) {
-                    try {
-                        sendMessage(message, subscriberAddress);
-                    } catch (IOException e){
-                        System.out.println("Error enviando mensaje: " + e.toString());
-                    }
-                }
-            }
-        }
-    }
-
-    private void sendMessage(String message, InetAddress address) throws IOException {
-        byte[] buffer = message.getBytes();
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, PORT);
-        DatagramChannel socket = DatagramChannel.open();
-        socket.send(ByteBuffer.wrap(buffer), new InetSocketAddress(address, PORT));
-    }
-
-     */
 
     public Servidor(InetSocketAddress localAddress){
         this.localAddress = localAddress;

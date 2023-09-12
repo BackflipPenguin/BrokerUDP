@@ -18,6 +18,7 @@ public class Fragmento {
     private CRC32 crc32;
     private String uuidMensaje;
     private String texto;
+    private boolean acknowledged;
 
     private int tamanoHeader;
 
@@ -124,6 +125,14 @@ public class Fragmento {
 
     public int getTamanoHeader() {
         return tamanoHeader;
+    }
+
+    public boolean isAcknowledged() {
+        return acknowledged;
+    }
+
+    public void setAcknowledged(boolean acknowledged) {
+        this.acknowledged = acknowledged;
     }
 
     public void setTamanoHeader(int tamanoHeader) {
