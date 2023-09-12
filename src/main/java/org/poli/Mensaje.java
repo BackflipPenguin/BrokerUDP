@@ -119,6 +119,10 @@ public class Mensaje {
         return fragmentos.values();
     }
 
+    public void ackFragment(int indice){
+        fragmentos.get(indice).setAcknowledged(true);
+    }
+
     public String getUuid() {
         return uuid;
     }

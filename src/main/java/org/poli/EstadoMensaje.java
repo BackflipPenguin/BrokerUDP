@@ -4,4 +4,5 @@ public enum EstadoMensaje {
     FALLIDO,
     CORRECTO,
     EN_PROGRESO
+
 }

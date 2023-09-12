@@ -22,6 +22,8 @@ public class Topico {
     private ExecutorService executorService;
     Usuario usuario;
 
+    private Topico topicoSYS;
+
     private boolean subscripto = false;
 
     public Topico(String nombre, String codigo, DatagramChannel canal, SocketAddress serverAddr, Usuario usuario, int tamanoDatagrama, boolean server, ExecutorService executorService) {
@@ -36,8 +38,22 @@ public class Topico {
         this.executorService = executorService;
         this.server = server;
         this.suscriptores = new ArrayList<>();
+        topicoSYS = this;
     }
-
+    public Topico(String nombre, String codigo, DatagramChannel canal, SocketAddress serverAddr, Usuario usuario, int tamanoDatagrama, boolean server, Topico topicoSYS, ExecutorService executorService) {
+        this.nombre = nombre;
+        this.codigo = codigo;
+        this.mensajes = new HashMap<>();
+        this.canal = canal;
+        this.tamanoDatagrama = tamanoDatagrama;
+        this.crc32 = new CRC32();
+        this.serverAddr = serverAddr;
+        this.usuario = usuario;
+        this.executorService = executorService;
+        this.server = server;
+        this.suscriptores = new ArrayList<>();
+        this.topicoSYS = topicoSYS;
+    }
     public String getNombre() {
         return nombre;
     }
@@ -58,7 +74,8 @@ public class Topico {
         return canal;
     }
 
-    public void addFragmento(Fragmento fragmento){
+    public void addFragment(Fragmento fragmento) throws IOException {
+        boolean ack = true;
         var mensaje = mensajes.get(fragmento.getUuidMensaje());
         if (mensaje == null){
             System.out.println("RECIBIENDO NUEVO MENSAJE CON UUID: " + fragmento.getUuidMensaje());
@@ -68,17 +85,38 @@ public class Topico {
         else {
             mensaje.addFragmento(fragmento);
         }
+
         if (mensaje.getEstado() == EstadoMensaje.CORRECTO){
-            System.out.println("COMPLETADA LA RECEPCION DEL MENSAJE CON UUID: " + mensaje.getUuid());
+            System.out.println("COMPLETADA LA RECEPCION DEL MENSAJE CON UUID: " + mensaje.getUuid() + " DE: " + fragmento.getCreador().getDireccion());
             System.out.println(mensaje.getContenido());
-            if (server){
-                if (mensaje.getContenido().equals("\\subscribe")) {
-                    Mensaje finalMensaje = mensaje;
-                    executorService.submit(() -> suscribir(finalMensaje.getCreador()) );
+                if (mensaje.getContenido().startsWith("\\")) {
+                    var sections = mensaje.getContenido().split("\\\\");
+                    switch (sections[1]) {
+                        case ("SUB") -> {
+                            Mensaje finalMensaje = mensaje;
+                            executorService.submit(() -> suscribir(finalMensaje.getCreador()));
+                        }
+                        case ("ACK") -> {
+                            if (sections.length != 4)
+                                enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\ARG", fragmento.getCreador().getDireccion());
+                            try {
+                                mensajes.get(sections[2]).ackFragment(Integer.parseInt(sections[3]));
+                            } catch (NullPointerException e){
+                                enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\NOMSG", fragmento.getCreador().getDireccion());
+                            }
+                            ack = false;
+                        }
+                    }
                 } else {
-                    broadcast(mensaje);
+                    Mensaje finalMensaje1 = mensaje;
+                    executorService.submit(() -> {
+                        broadcast(finalMensaje1);
+                    });
                 }
-            }
+        }
+
+        if (ack){
+            enviarACK(fragmento);
         }
     }
 
@@ -86,26 +124,31 @@ public class Topico {
         this.canal = canal;
     }
 
-
     public void subscribirse() throws IOException {
-       enviar("\\subscribe");
+       enviar("\\SUB");
        subscripto = true;
     }
     public void suscribir(Usuario usuario){
         suscriptores.add(usuario);
         System.out.println("EL USUARIO " + usuario.getNombre() + " HA SIDO SUSCRIPTO AL TOPICO: " + codigo);
     }
-
+    public void enviarACK(Fragmento f) throws IOException {
+        System.out.println("ENVIANDO ACK DEL FRAGMENTO: " + f.getIndice() + " CORRESPONDIENTE AL MENSAJE CON UUID:" + f.getUuidMensaje() + " A: " + f.getCreador().getDireccion());
+        enviarSYS( "\\ACK\\" + f.getUuidMensaje() + "\\" + f.getIndice(), f.getCreador().getDireccion());
+    }
     public void broadcast(Mensaje mensaje ) {
         System.out.println("INICIANDO BROADCAST DEL MENSAJE CON UUID: " + mensaje.getUuid());
         for (Usuario s:
              suscriptores) {
             executorService.submit(() -> {
                 try {
+                    // no enviar a donde recibimos
                     if (!(s.getNombre().equals(mensaje.getCreador().getNombre()))){
 
                         System.out.println("ENVIANDO MENSAJE " + mensaje.getUuid() + " A: " + s.getNombre());
-                        enviar(mensaje, s.getDireccion());
+                        // se debe recrear el mensaje para que tenga distinto uuid segun a quien se envia
+
+                        enviar(new Mensaje(mensaje.getContenido(), mensaje.getCreador(), codigo, crc32, tamanoDatagrama), s.getDireccion());
                     }
                 } catch (IOException e) {
                     System.out.println("Error en broadcast enviando a usuario: " + s.getNombre() + "\n" + e );
@@ -117,44 +160,19 @@ public class Topico {
     public void enviar(Mensaje mensaje) throws IOException {
         enviar(mensaje, this.serverAddr);
     }
+
+    public void enviarSYS(String contenidoMensaje, SocketAddress destino) throws IOException {
+        var mensaje = new Mensaje(contenidoMensaje, usuario, "SYS", crc32, tamanoDatagrama);
+        topicoSYS.enviar(mensaje, destino);
+    }
+
     public void enviar(String contenidoMensaje) throws IOException {
         var mensaje = new Mensaje(contenidoMensaje, usuario, codigo, crc32, tamanoDatagrama);
         enviar(mensaje, this.serverAddr);
     }
     public void enviar(Mensaje mensaje, SocketAddress destino) throws IOException {
-
-        /*
-        int tamanoDatagrama = this.tamanoDatagrama;
-        String texto = mensaje.toString();
-        int tamanoHeader = new Fragmento(usuario, 1, 1,
-                new byte[0], this.codigo, crc32).getTamanoHeader();
-        tamanoDatagrama -= tamanoHeader;
-        int cantFragmentos = texto.length() / tamanoDatagrama ;
-        int digitosExtra = String.valueOf(cantFragmentos).length() - 1;
-        tamanoDatagrama -= digitosExtra;
-       ArrayList<Fragmento> fragmentos = new ArrayList<>();
-
-
-        for (int i = 0; i <= cantFragmentos; i++){
-            // no se me ocurrió una solución mejor :(
-            if (i == 10){
-                tamanoDatagrama -= 2;
-            } else if (i == 100) {
-                tamanoDatagrama -= 2;
-            } else if (i == 1000) {
-                tamanoDatagrama -= 2;
-            } else if (i == 10000) {
-                tamanoDatagrama -= 2;
-            }
-
-            int indexfin = tamanoDatagrama * (i+1);
-            if (texto.length() < indexfin){
-                indexfin = texto.length();
-            }
-            fragmentos.add(new Fragmento(usuario, i, cantFragmentos,
-                    texto.substring(i * tamanoDatagrama, indexfin).getBytes(), this.codigo,  crc32));
-        } */
-
+        // agregar mensaje a los mensajes del canal
+        mensajes.put(mensaje.getUuid(), mensaje);
         System.out.println("ENVIANDO MENSAJE " + mensaje.getUuid() + " A: " + destino);
         var fragmentos = mensaje.generarFragmentos();
 
