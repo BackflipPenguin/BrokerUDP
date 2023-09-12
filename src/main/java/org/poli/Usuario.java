@@ -2,15 +2,27 @@ package org.poli;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.security.PublicKey;
 import java.util.Objects;
 
 public class Usuario {
     private InetSocketAddress direccion;
     private String nombre;
 
-    public Usuario(InetSocketAddress direccion, String nombre) {
+    private PublicKey pubKey;
+
+    public Usuario(InetSocketAddress direccion, String nombre, PublicKey pubKey) {
         this.direccion = direccion;
         this.nombre = nombre;
+        this.pubKey = pubKey;
+    }
+
+    public PublicKey getPubKey() {
+        return pubKey;
+    }
+
+    public void setPubKey(PublicKey pubKey) {
+        this.pubKey = pubKey;
     }
 
     public InetSocketAddress getDireccion() {

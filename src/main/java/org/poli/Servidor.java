@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,6 +16,8 @@ public class Servidor {
     private final ExecutorService executorService;
     private final InetSocketAddress localAddress;
     private final HashMap<String, Topico> topicos;
+    private final HashMap<String, Usuario> usuariosRegistrados;
+    private Cripto cripto;
 
     public boolean checkFragment(String s, long hash){
         CRC32 crc32 = new CRC32();
@@ -24,7 +27,7 @@ public class Servidor {
     public void start() throws IOException {
         DatagramChannel channel = DatagramChannel.open();
         channel.bind(localAddress);
-        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, true, executorService));
+        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR", cripto.getPublicKey()), 1024, true, executorService));
 
         System.out.println("UDP Broker Servidor iniciado en puerto: " + this.localAddress.getPort());
         var socket = channel.socket();
@@ -61,13 +64,15 @@ public class Servidor {
         }
     }
 
-    public Servidor(InetSocketAddress localAddress){
+    public Servidor(InetSocketAddress localAddress) throws NoSuchAlgorithmException {
         this.localAddress = localAddress;
         this.executorService = Executors.newFixedThreadPool(10);
+        this.cripto = new Cripto();
         this.topicos = new HashMap<>();
+        this.usuariosRegistrados = new HashMap<>();
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         var s = new Scanner(System.in);
         System.out.println("Ingrese el puerto a utilizar: ");
         var puerto = s.nextInt();
