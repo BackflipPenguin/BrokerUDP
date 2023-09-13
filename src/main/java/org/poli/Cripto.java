@@ -6,6 +6,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -23,25 +24,27 @@ public class Cripto {
         dsa = Signature.getInstance("SHA256withRSA");
     }
 
-    public byte[] generarFirma(byte[] mensaje) throws SignatureException {
+    public String generarFirma(byte[] mensaje) throws SignatureException {
         try {
             dsa.initSign(privateKey);
             dsa.update(mensaje);
-            return dsa.sign();
+            var s = dsa.sign();
 
-//            return Base64.getEncoder().encodeToString(s);
+            return Base64.getEncoder().encodeToString(s);
 
         } catch (Exception e){
             System.out.println("Error generando firma");
             e.printStackTrace();
         }
-        return new byte[]{0};
+        return "";
    }
 
-   public boolean verificarFirma(byte[] mensaje, byte[] firma, PublicKey autor) throws InvalidKeyException, SignatureException {
-        dsa.initVerify(autor);
-        dsa.update(mensaje);
-        return dsa.verify(firma);
+   public boolean verificarFirma(String mensaje, String firma, PublicKey autor) throws InvalidKeyException, SignatureException {
+       var firmaDecoded = Base64.getDecoder().decode(firma.getBytes());
+
+       dsa.initVerify(autor);
+        dsa.update(mensaje.getBytes(StandardCharsets.UTF_8));
+        return dsa.verify(firmaDecoded);
    }
 
     public byte[] encriptar(String mensaje, PublicKey pubKeyDestino) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
@@ -74,6 +77,6 @@ public class Cripto {
         byte[] mensajeEncriptado = cripto1.encriptar("Hola perro", cripto2.getPublicKey());
         System.out.println(cripto2.desencriptar(mensajeEncriptado));
         var firma = cripto1.generarFirma(mensaje.getBytes(StandardCharsets.UTF_8));
-        System.out.println(cripto2.verificarFirma(mensaje.getBytes(StandardCharsets.UTF_8), firma, cripto1.getPublicKey()));
+        System.out.println(cripto2.verificarFirma(mensaje, firma, cripto1.getPublicKey()));
     }
 }

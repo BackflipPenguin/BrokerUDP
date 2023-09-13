@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,7 +17,8 @@ public class Servidor {
     private final ExecutorService executorService;
     private final InetSocketAddress localAddress;
     private final HashMap<String, Topico> topicos;
-    private final HashMap<String, Usuario> usuariosRegistrados;
+
+    private final Usuario yo;
     private Cripto cripto;
 
     public boolean checkFragment(String s, long hash){
@@ -27,7 +29,7 @@ public class Servidor {
     public void start() throws IOException {
         DatagramChannel channel = DatagramChannel.open();
         channel.bind(localAddress);
-        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR", cripto.getPublicKey()), 1024, true, executorService));
+        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, localAddress, yo, 1024, true, executorService));
 
         System.out.println("UDP Broker Servidor iniciado en puerto: " + this.localAddress.getPort());
         var socket = channel.socket();
@@ -56,11 +58,15 @@ public class Servidor {
             var topicoDestino = topicos.get(f.getCodigoTopico());
             if (topicoDestino == null){
                 System.out.println("MENSAJE ENVIADO A TOPICO INEXISTENTE: " + f.getCodigoTopico() + " CREANDOLO.");
-                topicoDestino = new Topico("", f.getCodigoTopico(), channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, true, topicos.get("SYS"), executorService);
+                topicoDestino = new Topico("", f.getCodigoTopico(), channel, yo, yo, 1024, true, topicos.get("SYS"), executorService);
                 topicos.put(topicoDestino.getCodigo(), topicoDestino);
             }
 
-            topicoDestino.addFragment(f);
+            try {
+                topicoDestino.addFragment(f);
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -69,7 +75,7 @@ public class Servidor {
         this.executorService = Executors.newFixedThreadPool(10);
         this.cripto = new Cripto();
         this.topicos = new HashMap<>();
-        this.usuariosRegistrados = new HashMap<>();
+        yo = new Usuario(localAddress, "SERVIDOR", cripto.getPublicKey());
     }
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
