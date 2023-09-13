@@ -1,11 +1,16 @@
 package org.poli;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -26,10 +31,10 @@ public class Servidor {
         crc32.update(s.getBytes(StandardCharsets.UTF_8));
         return hash == crc32.getValue();
     }
-    public void start() throws IOException {
+    public void start() throws IOException, SignatureException {
         DatagramChannel channel = DatagramChannel.open();
         channel.bind(localAddress);
-        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, localAddress, yo, 1024, true, executorService));
+        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, localAddress, yo, 1024, true, cripto, executorService));
 
         System.out.println("UDP Broker Servidor iniciado en puerto: " + this.localAddress.getPort());
         var socket = channel.socket();
@@ -46,19 +51,25 @@ public class Servidor {
             byte[] longbytes = new byte[8];
             System.arraycopy(data, 0, longbytes, 0, 8);
             long hash = Utils.bytesToLong(longbytes);
-            System.out.println(hash);
-            System.out.println("RECEPCION DE: " + packet.getAddress() + " " + packet.getPort());
+            System.out.println("[SERVIDOR] RECEPCION DE: " + packet.getAddress() + " " + packet.getPort());
             if (!checkFragment(mensaje, hash)){
-                var f = new Fragmento(mensaje, new InetSocketAddress(packet.getAddress(), packet.getPort()));
-                System.out.println(Arrays.toString(f.getBytes()));
+               System.out.println("MENSAJE INCORRECTO");
+                continue;
+            }
+            String[] partes = mensaje.split(":", 7);
+            if (partes.length != 7){
                 System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
-            Fragmento f = new Fragmento(mensaje, new InetSocketAddress(packet.getAddress(), packet.getPort()));
+            var creador = topicos.get("SYS").getSuscriptor(partes[0]);
+            if (creador == null){
+                creador = new Usuario(new InetSocketAddress(packet.getAddress(), packet.getPort()), partes[0], null);
+            }
+            var f = new Fragmento(partes, creador, cripto);
             var topicoDestino = topicos.get(f.getCodigoTopico());
             if (topicoDestino == null){
                 System.out.println("MENSAJE ENVIADO A TOPICO INEXISTENTE: " + f.getCodigoTopico() + " CREANDOLO.");
-                topicoDestino = new Topico("", f.getCodigoTopico(), channel, yo, yo, 1024, true, topicos.get("SYS"), executorService);
+                topicoDestino = new Topico("", f.getCodigoTopico(), channel, yo, yo, 1024, true, cripto, topicos.get("SYS"), executorService);
                 topicos.put(topicoDestino.getCodigo(), topicoDestino);
             }
 
@@ -78,7 +89,7 @@ public class Servidor {
         yo = new Usuario(localAddress, "SERVIDOR", cripto.getPublicKey());
     }
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, SignatureException {
         var s = new Scanner(System.in);
         System.out.println("Ingrese el puerto a utilizar: ");
         var puerto = s.nextInt();
