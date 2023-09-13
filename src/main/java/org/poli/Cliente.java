@@ -27,7 +27,7 @@ public class Cliente {
         if (t == null) {
             t = new Topico("", codigoTopico,
                     channel,
-                    topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, 1024, false, cripto, topicos.get("SYS"), executorService);
+                    topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, Utils.FRAG_SIZE, false, cripto, topicos.get("SYS"), executorService);
             topicos.put(t.getCodigo(), t);
         }
         t.enviar(mensaje);
@@ -39,7 +39,7 @@ public class Cliente {
        if (t == null) {
            t = new Topico("", codigoTopico,
                    channel,
-                   topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, 1024, false, cripto, topicos.get("SYS"), executorService);
+                   topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, Utils.FRAG_SIZE, false, cripto, topicos.get("SYS"), executorService);
            topicos.put(t.getCodigo(), t);
        }
        t.subscribirse();
@@ -50,7 +50,7 @@ public class Cliente {
         var socket = channel.socket();
         System.out.println("RECIBIENDO MENSAJES EN  " + channel.getLocalAddress());
         while (continuar){
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[Utils.FRAG_SIZE];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             socket.receive(packet);
 
@@ -61,7 +61,6 @@ public class Cliente {
             byte[] longbytes = new byte[8];
             System.arraycopy(data, 0, longbytes, 0, 8);
             long hash = Utils.bytesToLong(longbytes);
-            System.out.println(hash);
             if (!checkFragment(mensaje, hash)){
                 /*
                 String[] partes = mensaje.split(":", 7);
@@ -82,8 +81,6 @@ public class Cliente {
                 creador = new Usuario(new InetSocketAddress(packet.getAddress(), packet.getPort()), partes[0], null);
             }
             Fragmento f = new Fragmento(partes, creador, cripto);
-            System.out.println("RECIBIDO:");
-            System.out.println(f.getTexto());
             var t = topicos.get(f.getCodigoTopico());
             try {
                 t.addFragment(f);
@@ -126,7 +123,7 @@ public class Cliente {
         this.executorService = executorService;
         this.cripto = new Cripto();
         this.yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), nombreUsuario, cripto.getPublicKey());
-        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, serverAddr, yo, 1024, false, cripto, executorService));
+        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, serverAddr, yo, Utils.FRAG_SIZE, false, cripto, executorService));
         topicos.get("SYS").registrarse();
     }
 

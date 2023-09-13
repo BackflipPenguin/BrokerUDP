@@ -22,7 +22,6 @@ public class Servidor {
     private final ExecutorService executorService;
     private final InetSocketAddress localAddress;
     private final HashMap<String, Topico> topicos;
-
     private final Usuario yo;
     private Cripto cripto;
 
@@ -34,13 +33,13 @@ public class Servidor {
     public void start() throws IOException, SignatureException {
         DatagramChannel channel = DatagramChannel.open();
         channel.bind(localAddress);
-        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, localAddress, yo, 1024, true, cripto, executorService));
+        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, localAddress, yo, Utils.FRAG_SIZE, true, cripto, executorService));
 
         System.out.println("UDP Broker Servidor iniciado en puerto: " + this.localAddress.getPort());
         var socket = channel.socket();
 
         while (true) {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[Utils.FRAG_SIZE];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             socket.receive(packet);
 
@@ -69,7 +68,7 @@ public class Servidor {
             var topicoDestino = topicos.get(f.getCodigoTopico());
             if (topicoDestino == null){
                 System.out.println("MENSAJE ENVIADO A TOPICO INEXISTENTE: " + f.getCodigoTopico() + " CREANDOLO.");
-                topicoDestino = new Topico("", f.getCodigoTopico(), channel, yo, yo, 1024, true, cripto, topicos.get("SYS"), executorService);
+                topicoDestino = new Topico("", f.getCodigoTopico(), channel, yo, yo, Utils.FRAG_SIZE, true, cripto, topicos.get("SYS"), executorService);
                 topicos.put(topicoDestino.getCodigo(), topicoDestino);
             }
 

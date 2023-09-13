@@ -45,8 +45,11 @@ public class Topico {
             if (sections.length != 4)
                 caller.enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\ARG", mensaje.getCreador().getDireccion());
             try {
+                // busca el uuid en el hashmap de mensajes y marca el fragmento como acknowledged
                 mensajes.get(sections[2]).ackFragment(Integer.parseInt(sections[3]));
-                System.out.println("[ACK HANDLER] RECIBIDO ACK DEL FRAGMENTO: " + sections[3] + " CORRESPONDIENTE AL MENSAJE CON UUID: " + sections[2]);
+                if (caller.server) {
+                    System.out.println("[ACK HANDLER] RECIBIDO ACK DEL FRAGMENTO: " + sections[3] + " CORRESPONDIENTE AL MENSAJE CON UUID: " + sections[2]);
+                }
             } catch (NullPointerException e){
                 caller.enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\NOMSG", mensaje.getCreador().getDireccion());
             }
@@ -201,7 +204,9 @@ public class Topico {
         boolean ack = true;
         var mensaje = mensajes.get(fragmento.getUuidMensaje());
         if (mensaje == null){
-            System.out.println("[TOPICO] RECIBIENDO NUEVO MENSAJE CON UUID: " + fragmento.getUuidMensaje());
+            if (server) {
+                System.out.println("[TOPICO] RECIBIENDO NUEVO MENSAJE CON UUID: " + fragmento.getUuidMensaje());
+            }
             mensaje = new Mensaje(fragmento);
             mensajes.put(mensaje.getUuid(), mensaje);
         }
@@ -210,23 +215,28 @@ public class Topico {
         }
 
         if (mensaje.getEstado() == Estado.CORRECTO){
-            System.out.println("[TOPICO] COMPLETADA LA RECEPCION DEL MENSAJE CON UUID: " + mensaje.getUuid() + " DE: " + fragmento.getCreador().getDireccion() + " CON CONTENIDO: ");
-            System.out.println("[TOPICO] " + mensaje.getContenido());
-                if (mensaje.getContenido().startsWith("\\")) {
-                    var sections = mensaje.getContenido().split("\\\\");
-                    if (sections[1].equals("ACK"))
-                        ack = false;
-                    try {
-                        comandos.get(sections[1]).handler(sections, mensaje, this); // llamar al handler correspondiente
-                    } catch (NullPointerException e){
-                        enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\NOCMD", mensaje.getCreador().getDireccion());
-                    }
-                } else {
-                    Mensaje finalMensaje1 = mensaje;
-                    executorService.submit(() -> {
-                        broadcast(finalMensaje1);
-                    });
+            if (server){
+                System.out.println("[TOPICO] COMPLETADA LA RECEPCION DEL MENSAJE CON UUID: " + mensaje.getUuid() + " DE: " + fragmento.getCreador().getDireccion() + " CON CONTENIDO: ");
+                System.out.println("[TOPICO] " + mensaje.getContenido());
+            }
+            if (mensaje.getContenido().startsWith("\\")) {
+                var sections = mensaje.getContenido().split("\\\\");
+                if (sections[1].equals("ACK"))
+                    ack = false;
+                try {
+                    comandos.get(sections[1]).handler(sections, mensaje, this); // llamar al handler correspondiente
+                } catch (NullPointerException e){
+                    enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\NOCMD", mensaje.getCreador().getDireccion());
                 }
+            } else {
+                Mensaje finalMensaje1 = mensaje;
+                if (!server){
+                    System.out.println("[" + codigo + "] " + mensaje.getCreador() + ": " + mensaje.getContenido());
+                }
+                executorService.submit(() -> {
+                    broadcast(finalMensaje1);
+                });
+            }
         }
 
         if (ack){
@@ -252,14 +262,26 @@ public class Topico {
     }
     public void suscribir(Usuario usuario){
         suscriptores.put(usuario.getNombre(), usuario);
-        System.out.println("[TOPICO] EL USUARIO " + usuario.getNombre() + " HA SIDO SUSCRIPTO AL TOPICO: " + codigo);
+        if (server) {
+            System.out.println("[TOPICO] EL USUARIO " + usuario.getNombre() + " HA SIDO SUSCRIPTO AL TOPICO: " + codigo);
+        }
     }
     public void enviarACK(Fragmento f) throws IOException {
-        System.out.println("[TOPICO] ENVIANDO ACK DEL FRAGMENTO: " + f.getIndice() + " CORRESPONDIENTE AL MENSAJE CON UUID:" + f.getUuidMensaje() + " A: " + f.getCreador().getDireccion());
-        enviarSYS( "\\ACK\\" + f.getUuidMensaje() + "\\" + f.getIndice(), f.getCreador().getDireccion());
+        if (server) {
+            System.out.println("[TOPICO] ENVIANDO ACK DEL FRAGMENTO: " + f.getIndice() + " CORRESPONDIENTE AL MENSAJE CON UUID:" + f.getUuidMensaje() + " A: " + f.getCreador().getDireccion());
+        }
+        var mensaje = new Mensaje("\\ACK\\" + f.getUuidMensaje() + "\\" + f.getIndice(), usuario, codigo, crc32, tamanoDatagrama, cripto);
+        try {
+            enviar(mensaje, f.getCreador());
+        } catch (SignatureException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
+                 BadPaddingException | InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
     }
     public void broadcast(Mensaje mensaje ) {
-        System.out.println("[TOPICO] INICIANDO BROADCAST DEL MENSAJE CON UUID: " + mensaje.getUuid());
+        if (server) {
+            System.out.println("[TOPICO] INICIANDO BROADCAST DEL MENSAJE CON UUID: " + mensaje.getUuid());
+        }
         for (Usuario s:
              suscriptores.values()) {
             executorService.submit(() -> {
@@ -267,10 +289,12 @@ public class Topico {
                     // no enviar a donde recibimos
                     if (!s.getNombre().equals(mensaje.getCreador().getNombre()) && !s.getNombre().equals("SERVIDOR")){
 
-                        System.out.println("[TOPICO] ENVIANDO MENSAJE " + mensaje.getUuid() + " A: " + s.getNombre());
+                        if (server) {
+                            System.out.println("[TOPICO] ENVIANDO MENSAJE " + mensaje.getUuid() + " A: " + s.getNombre());
+                        }
+
                         // se debe recrear el mensaje para que tenga distinto uuid segun a quien se envia para poder
                         // recibir ACKs separados
-
                         enviar(new Mensaje(mensaje.getContenido(), mensaje.getCreador(), codigo, crc32, tamanoDatagrama, cripto), s);
                     }
                 } catch (IOException e) {
@@ -305,7 +329,9 @@ public class Topico {
     public void enviar(Mensaje mensaje, Usuario destino) throws IOException, SignatureException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         // agregar mensaje a los mensajes del canal
         mensajes.put(mensaje.getUuid(), mensaje);
-        System.out.println("[TOPICO] ENVIANDO MENSAJE " + mensaje.getUuid() + " CON CONTENIDO: " + mensaje.getContenido() + " A: " + destino);
+        if (server) {
+            System.out.println("[TOPICO] ENVIANDO MENSAJE " + mensaje.getUuid() + " CON CONTENIDO: " + mensaje.getContenido() + " A: " + destino);
+        }
         var fragmentos = mensaje.generarFragmentos(destino.getPubKey());
 
         for (var f: fragmentos) {

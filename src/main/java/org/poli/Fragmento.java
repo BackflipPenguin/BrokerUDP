@@ -205,7 +205,7 @@ public class Fragmento {
             this.estado = Estado.CORRECTO;
             this.texto = partes[6];
         }
-        contenido = this.texto.getBytes(StandardCharsets.UTF_8);
+        this.contenido = this.texto.getBytes(StandardCharsets.UTF_8);
         generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
     }
     public String getTexto(){
@@ -238,7 +238,7 @@ public class Fragmento {
     }
 
     //                           1      2     3          4           5      6        7
-    // ESTRUCTURA FRAGMENTO    HASH:CREADOR:INDICE:TOTAL_PAQUETES:TOPICO:CONTENIDO:FIRMA
+    // ESTRUCTURA FRAGMENTO    HASH:CREADOR:INDICE:TOTAL_PAQUETES:TOPICO:FIRMA:CONTENIDO
     public byte[] getBytes() throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         var contenido = this.contenido;
         if (destino != null){
