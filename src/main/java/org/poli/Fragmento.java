@@ -1,8 +1,14 @@
 package org.poli;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.SignatureException;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.zip.CRC32;
 
@@ -10,7 +16,6 @@ public class Fragmento {
     private Usuario creador;
     private int indice;
     private byte[] contenido;
-
     private int totalPaquetes;
     private long hash;
     private String codigoTopico;
@@ -19,42 +24,44 @@ public class Fragmento {
     private String uuidMensaje;
     private String texto;
     private boolean acknowledged;
-
     private int tamanoHeader;
-
     private String header;
-
+    private Cripto cripto;
+    private Estado estado;
+    private PublicKey destino;
     public String getHeader() {
         return header;
     }
-
     public void setHeader(String header) {
         this.header = header;
     }
 
-    public Fragmento(Usuario creador, int indice, byte[] contenido) {
+    public Fragmento(Usuario creador, int indice, byte[] contenido, Cripto cripto) {
         this.creador = creador;
         this.indice = indice;
         this.contenido = contenido;
         this.texto = new String(contenido, StandardCharsets.UTF_8);
+        this.cripto = cripto;
     }
 
-    public Fragmento(Usuario creador, int indice, byte[] contenido, CRC32 crc32 ) {
+    public Fragmento(Usuario creador, int indice, byte[] contenido, CRC32 crc32, Cripto cripto ) {
         this.creador = creador;
         this.indice = indice;
         this.contenido = contenido;
         this.crc32 = crc32;
         this.texto = new String(contenido, StandardCharsets.UTF_8);
+        this.cripto = cripto;
     }
-    public Fragmento(Usuario creador, int indice, int totalPaquetes, byte[] contenido, CRC32 crc32) {
+    public Fragmento(Usuario creador, int indice, int totalPaquetes, byte[] contenido, CRC32 crc32, Cripto cripto) {
         this.creador = creador;
         this.indice = indice;
         this.contenido = contenido;
         this.crc32 = crc32;
         this.totalPaquetes = totalPaquetes;
         this.texto = new String(contenido, StandardCharsets.UTF_8);
+        this.cripto = cripto;
     }
-    public Fragmento(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32) {
+    public Fragmento(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32, Cripto cripto) throws SignatureException {
         this.creador = creador;
         this.indice = indice;
         this.contenido = contenido;
@@ -63,12 +70,29 @@ public class Fragmento {
         this.totalPaquetes = totalPaquetes;
         this.texto = new String(contenido, StandardCharsets.UTF_8);
         this.codigoTopico = codigoTopico;
+        this.cripto = cripto;
+        this.destino = null;
         generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
     }
-
-    private void generateHeader(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, String codigoTopico){
-        this.header = creador.getNombre() + ":" + uuidMensaje + ":" + Integer.toString
-                (indice) + ":" + Integer.toString(totalPaquetes) + ":" + codigoTopico + ":";
+    public Fragmento(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32, Cripto cripto, PublicKey destino) throws SignatureException {
+        this.creador = creador;
+        this.indice = indice;
+        this.contenido = contenido;
+        this.uuidMensaje = uuidMensaje;
+        this.crc32 = crc32;
+        this.totalPaquetes = totalPaquetes;
+        this.texto = new String(contenido, StandardCharsets.UTF_8);
+        this.codigoTopico = codigoTopico;
+        this.cripto = cripto;
+        this.destino = destino;
+        generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
+    }
+    private void generateHeader(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, String codigoTopico) throws SignatureException {
+        String firma = "";
+        if (this.destino != null){
+           firma = cripto.generarFirma(contenido);
+        }
+        this.header = creador.getNombre() + ":" + uuidMensaje + ":" + indice + ":" + totalPaquetes + ":" + codigoTopico + ":" + firma + ":";
         this.tamanoHeader = (this.header.length() * 2) + 8; // 8 bytes del CRC32, char = 2 bytes
     }
     public void setTotalPaquetes(int totalPaquetes) {
@@ -81,6 +105,18 @@ public class Fragmento {
 
     public void setHash(long hash) {
         this.hash = hash;
+    }
+
+    public Cripto getCripto() {
+        return cripto;
+    }
+
+    public Estado getEstado() {
+        return estado;
+    }
+
+    public PublicKey getDestino() {
+        return destino;
     }
 
     public byte[] getEnvio() {
@@ -139,18 +175,37 @@ public class Fragmento {
         this.tamanoHeader = tamanoHeader;
     }
 
-    public Fragmento(String recibido, InetSocketAddress addr){
-        String[] partes = recibido.split(":", 6);
-        if (partes.length != 6) {
-            return;
+    public Fragmento(String[] partes, Usuario autor, Cripto cripto) throws SignatureException {
+        if (partes.length != 7) {
+            throw new RuntimeException();
         }
-        this.creador = new Usuario(addr, partes[0], null);
+        this.cripto = cripto;
+        this.creador = autor;
         this.uuidMensaje = partes[1];
         this.indice = Integer.parseInt(partes[2]);
         this.totalPaquetes = Integer.parseInt(partes[3]);
         this.codigoTopico = partes[4];
-        this.texto  = partes[5];
-        this.contenido = texto.getBytes(StandardCharsets.UTF_8);
+        if (!partes[5].isEmpty()){
+            try {
+                this.texto = cripto.desencriptar(partes[6].getBytes());
+            } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
+                     BadPaddingException | InvalidKeyException e) {
+                System.out.println("[FRAGMENTO] ERROR DESENCRIPTANDO FRAGMENTO " + this.indice + " DEL MENSAJE CON UUID: " + this.uuidMensaje);
+            }
+            try {
+                if (cripto.verificarFirma(this.texto, partes[5], this.creador.getPubKey())) {
+                    this.estado = Estado.CORRECTO;
+                } else {
+                    this.estado = Estado.FALLA_FIRMA;
+                }
+            } catch (SignatureException | InvalidKeyException e) {
+                this.estado = Estado.FALLA_FIRMA;
+            }
+        } else {
+            this.estado = Estado.CORRECTO;
+            this.texto = partes[6];
+        }
+        contenido = this.texto.getBytes(StandardCharsets.UTF_8);
         generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
     }
     public String getTexto(){
@@ -182,16 +237,18 @@ public class Fragmento {
         this.contenido = contenido;
     }
 
-    //                           1      2     3          4           5     6
-    // ESTRUCTURA FRAGMENTO    HASH:CREADOR:INDICE:TOTAL_PAQUETES:TOPICO:CONTENIDO
-    public byte[] getBytes(){
+    //                           1      2     3          4           5      6        7
+    // ESTRUCTURA FRAGMENTO    HASH:CREADOR:INDICE:TOTAL_PAQUETES:TOPICO:CONTENIDO:FIRMA
+    public byte[] getBytes() throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        var contenido = this.contenido;
+        if (destino != null){
+           contenido = cripto.encriptar(contenido,destino) ;
+        }
         var envio = Utils.arrayConcat(header.getBytes(StandardCharsets.UTF_8), contenido);
-        CRC32 crc = this.getCrc32();
+        CRC32 crc = getCrc32();
         crc.update(envio);
         hash = crc.getValue();
         crc.reset();
-        System.out.println(hash);
-        System.out.println(new String(envio, StandardCharsets.UTF_8));
         return Utils.arrayConcat(Utils.longToBytes(hash), envio);
     }
 

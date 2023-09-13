@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -20,14 +21,13 @@ public class Cliente {
     private DatagramChannel channel;
     private HashMap<String, Topico> topicos;
     private Usuario yo;
-    private InetSocketAddress serverAddr;
     private ExecutorService executorService;
     public void enviar(String mensaje, String codigoTopico) throws IOException {
         var t = topicos.get(codigoTopico);
         if (t == null) {
             t = new Topico("", codigoTopico,
                     channel,
-                    topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, 1024, false, topicos.get("SYS"), executorService);
+                    topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, 1024, false, cripto, topicos.get("SYS"), executorService);
             topicos.put(t.getCodigo(), t);
         }
         t.enviar(mensaje);
@@ -39,12 +39,12 @@ public class Cliente {
        if (t == null) {
            t = new Topico("", codigoTopico,
                    channel,
-                   topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, 1024, false, topicos.get("SYS"), executorService);
+                   topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, 1024, false, cripto, topicos.get("SYS"), executorService);
            topicos.put(t.getCodigo(), t);
        }
        t.subscribirse();
    }
-    public void recibir() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    public void recibir() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException {
         var continuar = true;
 
         var socket = channel.socket();
@@ -63,12 +63,25 @@ public class Cliente {
             long hash = Utils.bytesToLong(longbytes);
             System.out.println(hash);
             if (!checkFragment(mensaje, hash)){
-                var f = new Fragmento(mensaje, new InetSocketAddress(packet.getAddress(), packet.getPort()));
+                /*
+                String[] partes = mensaje.split(":", 7);
+                var f = new Fragmento(partes, );
                 System.out.println(Arrays.toString(f.getBytes()));
+
+                 */
                 System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
-            Fragmento f = new Fragmento(mensaje, new InetSocketAddress(packet.getAddress(), packet.getPort()));
+            String[] partes = mensaje.split(":", 7);
+            if (partes.length != 7){
+                System.out.println("MENSAJE INCORRECTO");
+                continue;
+            }
+            var creador = topicos.get("SYS").getSuscriptor(partes[0]);
+            if (creador == null){
+                creador = new Usuario(new InetSocketAddress(packet.getAddress(), packet.getPort()), partes[0], null);
+            }
+            Fragmento f = new Fragmento(partes, creador, cripto);
             System.out.println("RECIBIDO:");
             System.out.println(f.getTexto());
             var t = topicos.get(f.getCodigoTopico());
@@ -77,15 +90,7 @@ public class Cliente {
             } catch (IOException e){
                 e.printStackTrace();
             }
-            /*
-            var topicoDestino = topicos.get(f.getCodigoTopico());
-            if (topicoDestino == null){
-                System.out.println("MENSAJE ENVIADO A TOPICO INEXISTENTE: " + f.getCodigoTopico() + " CREANDOLO.");
-                topicoDestino = new Topico("", f.getCodigoTopico(), channel, channel.getLocalAddress(), new Usuario(localAddress, "SERVIDOR"), 1024, executorService);
-                topicos.put(topicoDestino.getCodigo(), topicoDestino);
-            }
-            */
-        }
+       }
     }
 
     public void enviar() throws IOException {
@@ -118,11 +123,10 @@ public class Cliente {
     public Cliente(DatagramChannel canal, String nombreUsuario, InetSocketAddress serverAddr, ExecutorService executorService) throws NoSuchAlgorithmException, IOException {
         this.channel = canal;
         this.topicos = new HashMap<>();
-        this.serverAddr = serverAddr;
         this.executorService = executorService;
         this.cripto = new Cripto();
         this.yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), nombreUsuario, cripto.getPublicKey());
-        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, serverAddr, yo, 1024, false, executorService));
+        topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, serverAddr, yo, 1024, false, cripto, executorService));
         topicos.get("SYS").registrarse();
     }
 
@@ -147,13 +151,12 @@ public class Cliente {
         executorService.submit( () -> {
             try {
                 c.recibir();
-            } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException | SignatureException e) {
                 throw new RuntimeException(e);
             }
         });
 
         c.enviar();
-
   }
     public boolean checkFragment(String s, long hash){
         CRC32 crc32 = new CRC32();

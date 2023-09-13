@@ -1,7 +1,7 @@
 package org.poli;
 
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
+import java.security.SignatureException;
 import java.util.*;
 import java.util.zip.CRC32;
 
@@ -11,20 +11,21 @@ public class Mensaje {
     private String codigoTopico;
     private String uuid;
     private CRC32 crc32;
-    private EstadoMensaje estado;
+    private Estado estado;
     private int tamanoMaxDatagrama = 1024;
     private int totalFragmentos;
-
+    private Cripto cripto;
     private HashMap<Integer, Fragmento> fragmentos;
 
-    public Mensaje(String contenido, Usuario creador, String codigoTopico, CRC32 crc32, int tamanoMaxDatagrama) {
+    public Mensaje(String contenido, Usuario creador, String codigoTopico, CRC32 crc32, int tamanoMaxDatagrama, Cripto cripto) {
         this.contenido = contenido;
         this.creador = creador;
         this.crc32 = crc32;
         this.codigoTopico = codigoTopico;
         this.tamanoMaxDatagrama = tamanoMaxDatagrama;
         this.uuid = String.valueOf(java.util.UUID.randomUUID()).substring(0, 8);
-        this.estado = EstadoMensaje.CORRECTO;
+        this.estado = Estado.CORRECTO;
+        this.cripto = cripto;
     }
 
     public Mensaje(Fragmento fragmentoInicial){
@@ -32,7 +33,8 @@ public class Mensaje {
         this.uuid = fragmentoInicial.getUuidMensaje();
         this.codigoTopico = fragmentoInicial.getCodigoTopico();
         this.totalFragmentos = fragmentoInicial.getTotalPaquetes();
-        this.estado = EstadoMensaje.EN_PROGRESO;
+        this.estado = Estado.EN_PROGRESO;
+        this.cripto = fragmentoInicial.getCripto();
         fragmentos = new HashMap<>();
         fragmentos.put(fragmentoInicial.getIndice(), fragmentoInicial);
         joinFragmentosIfComplete();
@@ -41,12 +43,14 @@ public class Mensaje {
     public Mensaje(HashMap<Integer, Fragmento> fragmentos, int cantFragmentos){
         this.fragmentos = fragmentos;
         ArrayList<String> contenidos = new ArrayList<>();
+
         this.creador = fragmentos.get(0).getCreador();
+        this.cripto  = fragmentos.get(0).getCripto();
         for (int i = 0; i < cantFragmentos; i++) {
             contenidos.add(fragmentos.get(i).getTexto());
         }
         this.contenido = String.join("", contenidos);
-        this.estado = EstadoMensaje.CORRECTO;
+        this.estado = Estado.CORRECTO;
     }
 
     private void joinFragmentosIfComplete(){
@@ -56,7 +60,7 @@ public class Mensaje {
                 contenidos.add(fragmentos.get(i).getTexto());
             }
             this.contenido = String.join("", contenidos);
-            this.estado = EstadoMensaje.CORRECTO;
+            this.estado = Estado.CORRECTO;
         }
     }
 
@@ -77,22 +81,17 @@ public class Mensaje {
 
     }
 
-    public Collection<Fragmento> generarFragmentos() {
+    public Collection<Fragmento> generarFragmentos(PublicKey destino) throws SignatureException {
         int tamanoDatagrama = this.tamanoMaxDatagrama;
         String texto = contenido;
         // bytes reservados para el header de los fragmentos
         int tamanoHeader = new Fragmento(creador, "12345678", 1, 1,
-                new byte[0], this.codigoTopico, this.crc32).getTamanoHeader();
+                new byte[0], this.codigoTopico, this.crc32, cripto, destino).getTamanoHeader();
 
         tamanoDatagrama -= tamanoHeader;
         int cantFragmentos = Math.max( (int) Math.ceil((double) texto.getBytes().length / tamanoDatagrama), 1);
         int digitosExtra = String.valueOf(cantFragmentos).length() - 1 ;
         tamanoDatagrama -= digitosExtra * 2;
-//        tamanoDatagrama -= 7; // ESTO ES UNA TORTURA
-        /*
-        if (cantFragmentos == 0){
-            canal.send(ByteBuffer.wrap(texto.getBytes()), servidor);
-        }*/
 
         this.fragmentos = new HashMap<>();
         for (int i = 0; i < cantFragmentos; i++) {
@@ -113,7 +112,7 @@ public class Mensaje {
                 cant = indexfin - texto.length();
             }
             fragmentos.put(i, new Fragmento(creador, uuid, i, cantFragmentos,
-                    Utils.trimByBytes(texto, i * tamanoDatagrama, tamanoDatagrama).getBytes(), this.codigoTopico, crc32));
+                    Utils.trimByBytes(texto, i * tamanoDatagrama, tamanoDatagrama).getBytes(), this.codigoTopico, crc32, cripto, destino));
         }
 
         return fragmentos.values();
@@ -131,11 +130,11 @@ public class Mensaje {
         this.uuid = uuid;
     }
 
-    public EstadoMensaje getEstado() {
+    public Estado getEstado() {
         return estado;
     }
 
-    public void setEstado(EstadoMensaje estado) {
+    public void setEstado(Estado estado) {
         this.estado = estado;
     }
 

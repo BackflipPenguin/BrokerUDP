@@ -1,12 +1,17 @@
 package org.poli;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
@@ -26,7 +31,8 @@ public class Topico {
     private final int tamanoDatagrama;
     private  InetSocketAddress serverAddr;
     private ExecutorService executorService;
-    Usuario usuario;
+    private Usuario usuario;
+    private Cripto cripto;
     private Topico topicoSYS;
     private boolean subscripto = false;
 
@@ -40,21 +46,18 @@ public class Topico {
                 caller.enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\ARG", mensaje.getCreador().getDireccion());
             try {
                 mensajes.get(sections[2]).ackFragment(Integer.parseInt(sections[3]));
+                System.out.println("[ACK HANDLER] RECIBIDO ACK DEL FRAGMENTO: " + sections[3] + " CORRESPONDIENTE AL MENSAJE CON UUID: " + sections[2]);
             } catch (NullPointerException e){
                 caller.enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\NOMSG", mensaje.getCreador().getDireccion());
             }
             return "ACK";
         };
-        CommandHandler err = (String[] sections, Mensaje mensaje, Topico caller) -> {
-            System.out.println("[ERR HANDLER] RESPUESTA DE ERROR: " + sections[3] + " EN EL MENSAJE CON UUID: " + sections[2]);
-            return "ERR";
-        };
+
         this.comandos.put("SUB", sub);
         this.comandos.put("ACK", ack);
-        this.comandos.put("ERR", err);
     }
 
-    public Topico(String nombre, String codigo, DatagramChannel canal, InetSocketAddress serverAddr, Usuario usuario, int tamanoDatagrama, boolean server, ExecutorService executorService) {
+    public Topico(String nombre, String codigo, DatagramChannel canal, InetSocketAddress serverAddr, Usuario usuario, int tamanoDatagrama, boolean server, Cripto cripto, ExecutorService executorService) {
         this.nombre = nombre;
         this.codigo = codigo;
         this.mensajes = new HashMap<>();
@@ -66,6 +69,7 @@ public class Topico {
         this.server = server;
         this.suscriptores = new HashMap<>();
         this.serverAddr = serverAddr;
+        this.cripto = cripto;
         topicoSYS = this;
         this.comandos = new HashMap<>();
         registrarComandos();
@@ -78,17 +82,22 @@ public class Topico {
             var kf = KeyFactory.getInstance("RSA");
             var pubkey = kf.generatePublic(encodedPubKey);
             var user = new Usuario(mensaje.getCreador().getDireccion(), mensaje.getCreador().getNombre(), pubkey);
-            getExecutorService().submit(() -> suscribir(user));
+            getExecutorService().submit(() -> caller.suscribir(user));
             return "REG";
         };
         CommandHandler key = (String[] sections, Mensaje mensaje, Topico caller) -> {
             caller.enviarSYS("\\REG\\" + Base64.getEncoder().encodeToString(caller.getUsuario().getPubKey().getEncoded()), mensaje.getCreador().getDireccion());
             return "KEY";
         };
+        CommandHandler err = (String[] sections, Mensaje mensaje, Topico caller) -> {
+            System.out.println("[ERR HANDLER] RESPUESTA DE ERROR: " + sections[3] + " EN EL MENSAJE CON UUID: " + sections[2]);
+            return "ERR";
+        };
         this.comandos.put("REG", reg);
         this.comandos.put("KEY", key);
+        this.comandos.put("ERR", err);
     }
-    public Topico(String nombre, String codigo, DatagramChannel canal, Usuario usuarioServer, Usuario usuario, int tamanoDatagrama, boolean server, Topico topicoSYS, ExecutorService executorService) {
+    public Topico(String nombre, String codigo, DatagramChannel canal, Usuario usuarioServer, Usuario usuario, int tamanoDatagrama, boolean server, Cripto cripto, Topico topicoSYS, ExecutorService executorService) {
         this.nombre = nombre;
         this.codigo = codigo;
         this.mensajes = new HashMap<>();
@@ -102,6 +111,7 @@ public class Topico {
         this.suscriptores.put("SERVIDOR", usuarioServer);
         this.topicoSYS = topicoSYS;
         this.comandos = new HashMap<>();
+        this.cripto = cripto;
         registrarComandos();
     }
     public String getNombre() {
@@ -199,7 +209,7 @@ public class Topico {
             mensaje.addFragmento(fragmento);
         }
 
-        if (mensaje.getEstado() == EstadoMensaje.CORRECTO){
+        if (mensaje.getEstado() == Estado.CORRECTO){
             System.out.println("[TOPICO] COMPLETADA LA RECEPCION DEL MENSAJE CON UUID: " + mensaje.getUuid() + " DE: " + fragmento.getCreador().getDireccion() + " CON CONTENIDO: ");
             System.out.println("[TOPICO] " + mensaje.getContenido());
                 if (mensaje.getContenido().startsWith("\\")) {
@@ -230,9 +240,9 @@ public class Topico {
 
     // solo para topico SYS
     public void registrarse() throws IOException {
-        enviar("\\REG\\" + Base64.getEncoder().encodeToString(usuario.getPubKey().getEncoded()), serverAddr);
-        enviar("\\KEY", serverAddr);
-        enviar("\\SUB", serverAddr);
+        enviarSYS("\\REG\\" + Base64.getEncoder().encodeToString(usuario.getPubKey().getEncoded()), serverAddr);
+        enviarSYS("\\KEY", serverAddr);
+        enviarSYS("\\SUB", serverAddr);
         subscripto = true;
     }
 
@@ -246,7 +256,7 @@ public class Topico {
     }
     public void enviarACK(Fragmento f) throws IOException {
         System.out.println("[TOPICO] ENVIANDO ACK DEL FRAGMENTO: " + f.getIndice() + " CORRESPONDIENTE AL MENSAJE CON UUID:" + f.getUuidMensaje() + " A: " + f.getCreador().getDireccion());
-        enviar( "\\ACK\\" + f.getUuidMensaje() + "\\" + f.getIndice(), f.getCreador().getDireccion());
+        enviarSYS( "\\ACK\\" + f.getUuidMensaje() + "\\" + f.getIndice(), f.getCreador().getDireccion());
     }
     public void broadcast(Mensaje mensaje ) {
         System.out.println("[TOPICO] INICIANDO BROADCAST DEL MENSAJE CON UUID: " + mensaje.getUuid());
@@ -258,42 +268,49 @@ public class Topico {
                     if (!s.getNombre().equals(mensaje.getCreador().getNombre()) && !s.getNombre().equals("SERVIDOR")){
 
                         System.out.println("[TOPICO] ENVIANDO MENSAJE " + mensaje.getUuid() + " A: " + s.getNombre());
-                        // se debe recrear el mensaje para que tenga distinto uuid segun a quien se envia
+                        // se debe recrear el mensaje para que tenga distinto uuid segun a quien se envia para poder
+                        // recibir ACKs separados
 
-                        enviar(new Mensaje(mensaje.getContenido(), mensaje.getCreador(), codigo, crc32, tamanoDatagrama), s.getDireccion());
+                        enviar(new Mensaje(mensaje.getContenido(), mensaje.getCreador(), codigo, crc32, tamanoDatagrama, cripto), s);
                     }
                 } catch (IOException e) {
                     System.out.println("[TOPICO] Error en broadcast enviando a usuario: " + s.getNombre() + "\n" + e );
+                } catch (NoSuchPaddingException | BadPaddingException | IllegalBlockSizeException | SignatureException |
+                         NoSuchAlgorithmException | InvalidKeyException e) {
+                    throw new RuntimeException(e);
                 }
             });
         }
     }
 
-    public void enviar(Mensaje mensaje) throws IOException {
-        enviar(mensaje, suscriptores.get("SERVIDOR").getDireccion());
-    }
-
     public void enviarSYS(String contenidoMensaje, SocketAddress destino) throws IOException {
-        var mensaje = new Mensaje(contenidoMensaje, usuario, "SYS", crc32, tamanoDatagrama);
-        topicoSYS.enviar(mensaje, destino);
+        var mensaje = new Mensaje(contenidoMensaje, usuario, "SYS", crc32, tamanoDatagrama, cripto);
+        try {
+            topicoSYS.enviar(mensaje, new Usuario((InetSocketAddress) destino, null, null));
+        } catch (SignatureException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
+                 BadPaddingException | InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void enviar(String contenidoMensaje) throws IOException {
-        enviar(contenidoMensaje, suscriptores.get("SERVIDOR").getDireccion());
+        try {
+            enviar(new Mensaje(contenidoMensaje, usuario, codigo, crc32, tamanoDatagrama, cripto), topicoSYS.getSuscriptor("SERVIDOR"));
+        } catch (SignatureException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
+                 BadPaddingException | InvalidKeyException e) {
+            throw new RuntimeException(e);
+        }
     }
-    public void enviar(String contenidoMensaje, SocketAddress destino) throws IOException {
-        var mensaje = new Mensaje(contenidoMensaje, usuario, codigo, crc32, tamanoDatagrama);
-        enviar(mensaje, destino);
-    }
-    public void enviar(Mensaje mensaje, SocketAddress destino) throws IOException {
+
+    public void enviar(Mensaje mensaje, Usuario destino) throws IOException, SignatureException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         // agregar mensaje a los mensajes del canal
         mensajes.put(mensaje.getUuid(), mensaje);
         System.out.println("[TOPICO] ENVIANDO MENSAJE " + mensaje.getUuid() + " CON CONTENIDO: " + mensaje.getContenido() + " A: " + destino);
-        var fragmentos = mensaje.generarFragmentos();
+        var fragmentos = mensaje.generarFragmentos(destino.getPubKey());
 
         for (var f: fragmentos) {
             var bytes = f.getBytes();
-            canal.send(ByteBuffer.wrap(bytes), destino);
+            canal.send(ByteBuffer.wrap(bytes), destino.getDireccion());
         }
     }
 }
