@@ -14,11 +14,10 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/EstadoMensaje.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Estado.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Mensaje.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Mensaje.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Utils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Utils.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,7 +73,7 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Application.Cliente">
+  <component name="RunManager" selected="Application.Cliente2">
     <configuration name="Cliente" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="org.poli.Cliente" />
       <module name="BrokerUDP" />
@@ -202,6 +201,7 @@
       <workItem from="1694014942987" duration="17829000" />
       <workItem from="1694465218288" duration="191000" />
       <workItem from="1694465420076" duration="6855000" />
+      <workItem from="1694619897062" duration="8639000" />
     </task>
     <task id="LOCAL-00001" summary="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor">
       <option name="closed" value="true" />
@@ -251,20 +251,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="Ahora se puede elegir el nombre de usuario" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/org/poli/Utils.java</url>
-          <line>39</line>
-          <option name="timeStamp" value="40" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/org/poli/Servidor.java</url>
-          <line>53</line>
-          <option name="timeStamp" value="50" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
     <pin-to-top-manager>
       <pinned-members>
         <PinnedItemInfo parentTag="java.lang.Integer" memberName="value" />

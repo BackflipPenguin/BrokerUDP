@@ -8,6 +8,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
 public class Utils {
+    public static final int FRAG_SIZE = 500;
     static <T> T arrayConcat(T array1, T array2) {
         if (!array1.getClass().isArray() || !array2.getClass().isArray()) {
             throw new IllegalArgumentException("Only arrays are accepted.");
