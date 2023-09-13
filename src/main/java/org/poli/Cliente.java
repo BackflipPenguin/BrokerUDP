@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -26,7 +27,7 @@ public class Cliente {
         if (t == null) {
             t = new Topico("", codigoTopico,
                     channel,
-                    serverAddr, yo, 1024, false, topicos.get("SYS"), executorService);
+                    topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, 1024, false, topicos.get("SYS"), executorService);
             topicos.put(t.getCodigo(), t);
         }
         t.enviar(mensaje);
@@ -38,12 +39,12 @@ public class Cliente {
        if (t == null) {
            t = new Topico("", codigoTopico,
                    channel,
-                   serverAddr, yo, 1024, false, topicos.get("SYS"), executorService);
+                   topicos.get("SYS").getSuscriptor("SERVIDOR"), yo, 1024, false, topicos.get("SYS"), executorService);
            topicos.put(t.getCodigo(), t);
        }
        t.subscribirse();
    }
-    public void recibir() throws IOException {
+    public void recibir() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         var continuar = true;
 
         var socket = channel.socket();
@@ -87,18 +88,46 @@ public class Cliente {
         }
     }
 
-    public Cliente(DatagramChannel canal, Usuario yo, InetSocketAddress serverAddr, ExecutorService executorService) throws NoSuchAlgorithmException {
+    public void enviar() throws IOException {
+        var s = new Scanner(System.in);
+        while (true){
+            var input = s.nextLine();
+            var partes = input.split(":", 2);
+            if (partes.length < 2){
+                System.out.println("Debe especificar el tópico");
+            } else{
+                if (partes[1].equals("\\subscribe")) {
+                    subscribirse(partes[0]);
+                } else {
+                    if(partes[1].startsWith("\\f")){
+                        var fn = partes[1].split(":", 2)[1];
+                        try {
+                            var msg = Files.readString(Path.of(fn));
+                            enviar(msg, partes[0]);
+                        } catch (NoSuchFileException e){
+                            System.out.println("Archivo no encontrado: " + fn);
+                        }
+                    } else {
+                        enviar(partes[1], partes[0]);
+                    }
+                }
+            }
+        }
+    }
+
+    public Cliente(DatagramChannel canal, String nombreUsuario, InetSocketAddress serverAddr, ExecutorService executorService) throws NoSuchAlgorithmException, IOException {
         this.channel = canal;
-        this.yo = yo;
         this.topicos = new HashMap<>();
         this.serverAddr = serverAddr;
         this.executorService = executorService;
         this.cripto = new Cripto();
+        this.yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), nombreUsuario, cripto.getPublicKey());
         topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, serverAddr, yo, 1024, false, executorService));
+        topicos.get("SYS").registrarse();
     }
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         var channel = DatagramChannel.open();
         var executorService = Executors.newFixedThreadPool(10);
         var s = new Scanner(System.in);
@@ -112,42 +141,20 @@ public class Cliente {
         var puerto = s.nextLine();
         System.out.println("Ingrese su nombre de usuario:");
         var nombre = s.nextLine();
-        var yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), nombre);
-        var c = new Cliente(channel, yo, new InetSocketAddress(addr,Integer.parseInt(puerto)), executorService);
+        var c = new Cliente(channel, nombre, new InetSocketAddress(addr,Integer.parseInt(puerto)), executorService);
 
 
         executorService.submit( () -> {
             try {
                 c.recibir();
-            } catch (IOException e) {
+            } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
                 throw new RuntimeException(e);
             }
         });
 
-        while (true){
-            var input = s.nextLine();
-            var partes = input.split(":", 2);
-            if (partes.length < 2){
-                System.out.println("Debe especificar el tópico");
-            } else{
-                if (partes[1].equals("\\subscribe")) {
-                    c.subscribirse(partes[0]);
-                } else {
-                    if(partes[1].startsWith("\\f")){
-                        var fn = partes[1].split(":", 2)[1];
-                        try {
-                            var msg = Files.readString(Path.of(fn));
-                            c.enviar(msg, partes[0]);
-                        } catch (NoSuchFileException e){
-                            System.out.println("Archivo no encontrado: " + fn);
-                        }
-                    } else {
-                        c.enviar(partes[1], partes[0]);
-                    }
-                }
-            }
-        }
-   }
+        c.enviar();
+
+  }
     public boolean checkFragment(String s, long hash){
         CRC32 crc32 = new CRC32();
         crc32.update(s.getBytes(StandardCharsets.UTF_8));

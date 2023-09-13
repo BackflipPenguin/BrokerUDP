@@ -144,7 +144,7 @@ public class Fragmento {
         if (partes.length != 6) {
             return;
         }
-        this.creador = new Usuario(addr, partes[0]);
+        this.creador = new Usuario(addr, partes[0], null);
         this.uuidMensaje = partes[1];
         this.indice = Integer.parseInt(partes[2]);
         this.totalPaquetes = Integer.parseInt(partes[3]);
