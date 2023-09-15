@@ -87,12 +87,4 @@ public class Servidor {
         this.topicos = new HashMap<>();
         yo = new Usuario(localAddress, "SERVIDOR", cripto.getPublicKey());
     }
-
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, SignatureException {
-        var s = new Scanner(System.in);
-        System.out.println("Ingrese el puerto a utilizar: ");
-        var puerto = s.nextInt();
-        Servidor server = new Servidor( new InetSocketAddress(puerto));
-        server.start();
-    }
 }

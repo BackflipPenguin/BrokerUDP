@@ -1,5 +1,6 @@
 package org.poli;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
@@ -101,14 +102,26 @@ public class Cliente {
                 if (partes[1].equals("\\subscribe")) {
                     subscribirse(partes[0]);
                 } else {
-                    if(partes[1].startsWith("\\f")){
+                    if(partes[1].startsWith("\\ft")) {
                         var fn = partes[1].split(":", 2)[1];
                         try {
                             var msg = Files.readString(Path.of(fn));
                             enviar(msg, partes[0]);
-                        } catch (NoSuchFileException e){
+                        } catch (NoSuchFileException e) {
                             System.out.println("Archivo no encontrado: " + fn);
                         }
+
+                    } else if (partes[1].startsWith("\\f")){
+                        var fn = partes[1].split(":", 2)[1];
+                        try {
+
+                            var file = new File(fn);
+                            var msg = "\\FIL\\" + file.getName()  + "\\" + Base64.getEncoder().encodeToString(Files.readAllBytes(Path.of(file.getAbsolutePath())));
+                            enviar(msg, partes[0]);
+                        } catch (NoSuchFileException e) {
+                            System.out.println("Archivo no encontrado: " + fn);
+                        }
+
                     } else {
                         enviar(partes[1], partes[0]);
                     }
@@ -127,34 +140,21 @@ public class Cliente {
         topicos.get("SYS").registrarse();
     }
 
-
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
-        var channel = DatagramChannel.open();
-        var executorService = Executors.newFixedThreadPool(10);
-        var s = new Scanner(System.in);
-        channel.bind(null);
-
-        //channel.configureBlocking(true);
-
-        System.out.println("Ingrese la direccion de destino:");
-        var addr = s.nextLine();
-        System.out.println("Ingrese el puerto de destino:");
-        var puerto = s.nextLine();
-        System.out.println("Ingrese su nombre de usuario:");
-        var nombre = s.nextLine();
-        var c = new Cliente(channel, nombre, new InetSocketAddress(addr,Integer.parseInt(puerto)), executorService);
-
-
+    public void start() throws IOException {
         executorService.submit( () -> {
             try {
-                c.recibir();
+                recibir();
             } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException | SignatureException e) {
                 throw new RuntimeException(e);
             }
         });
 
-        c.enviar();
-  }
+        enviar();
+    }
+
+
+
+
     public boolean checkFragment(String s, long hash){
         CRC32 crc32 = new CRC32();
         crc32.update(s.getBytes(StandardCharsets.UTF_8));

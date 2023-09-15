@@ -3,7 +3,10 @@ package org.poli;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -55,9 +58,24 @@ public class Topico {
             }
             return "ACK";
         };
-
+        CommandHandler file = (String[] sections, Mensaje mensaje, Topico caller) -> {
+            if (sections.length != 4)
+                caller.enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\ARG", mensaje.getCreador().getDireccion());
+            else if (caller.server){
+                System.out.println("[FIL HANDLER] RECIBIDO NUEVO ARCHIVO DE " + mensaje.getCreador() + " CON NOMBRE: " + sections[2]);
+                caller.broadcast(mensaje);
+            } else {
+                byte[] data = Base64.getDecoder().decode(sections[3]);
+                System.out.println( "[" + caller.getCodigo() + "] " + "Recibido archivo " + sections[2] + " de: " + mensaje.getCreador());
+                try (OutputStream stream = new FileOutputStream(new File("./" + sections[2]).getAbsolutePath())){
+                    stream.write(data);
+                }
+            }
+            return "FIL";
+        };
         this.comandos.put("SUB", sub);
         this.comandos.put("ACK", ack);
+        this.comandos.put("FIL", file);
     }
 
     public Topico(String nombre, String codigo, DatagramChannel canal, InetSocketAddress serverAddr, Usuario usuario, int tamanoDatagrama, boolean server, Cripto cripto, ExecutorService executorService) {
@@ -217,7 +235,10 @@ public class Topico {
         if (mensaje.getEstado() == Estado.CORRECTO){
             if (server){
                 System.out.println("[TOPICO] COMPLETADA LA RECEPCION DEL MENSAJE CON UUID: " + mensaje.getUuid() + " DE: " + fragmento.getCreador().getDireccion() + " CON CONTENIDO: ");
-                System.out.println("[TOPICO] " + mensaje.getContenido());
+                var contenido =  mensaje.getContenido();
+                if (contenido.length() < 3000){
+                    System.out.println("[TOPICO] " + contenido);
+                }
             }
             if (mensaje.getContenido().startsWith("\\")) {
                 var sections = mensaje.getContenido().split("\\\\");

@@ -12,12 +12,10 @@
   <component name="ChangeListManager">
     <list default="true" id="1900ab8a-e4de-4ac7-a73f-ec41164d73a0" name="Changes" comment="Ahora se puede elegir el nombre de usuario">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Utils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Utils.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,8 +26,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Enum" />
-        <option value="Class" />
         <option value="Interface" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -73,96 +71,38 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Application.Cliente2">
-    <configuration name="Cliente" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.poli.Cliente" />
+  <component name="RunManager" selected="Application.Client 2">
+    <configuration name="Client 2" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="org.poli.Main" />
       <module name="BrokerUDP" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.poli.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
+      <option name="PROGRAM_PARAMETERS" value="client" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Cliente2" type="Application" factoryName="Application">
-      <option name="MAIN_CLASS_NAME" value="org.poli.Cliente" />
+    <configuration name="Client" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="org.poli.Main" />
       <module name="BrokerUDP" />
+      <option name="PROGRAM_PARAMETERS" value="client" />
+      <option name="WORKING_DIRECTORY" value="$USER_HOME$/" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ConnectionWindow" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.poli.ConnectionWindow" />
+    <configuration name="Server" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="org.poli.Main" />
       <module name="BrokerUDP" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.poli.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Cripto" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.poli.Cripto" />
-      <module name="BrokerUDP" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.poli.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="MainWindow" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.poli.MainWindow" />
-      <module name="BrokerUDP" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.poli.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Servidor" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="org.poli.Servidor" />
-      <module name="BrokerUDP" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="org.poli.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
+      <option name="PROGRAM_PARAMETERS" value="server 8080" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
     <list>
-      <item itemvalue="Application.Cliente2" />
-      <item itemvalue="Application.Cripto" />
-      <item itemvalue="Application.Cliente" />
-      <item itemvalue="Application.ConnectionWindow" />
-      <item itemvalue="Application.MainWindow" />
-      <item itemvalue="Application.Servidor" />
+      <item itemvalue="Application.Server" />
+      <item itemvalue="Application.Client" />
+      <item itemvalue="Application.Client 2" />
     </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Application.Cliente" />
-        <item itemvalue="Application.Servidor" />
-        <item itemvalue="Application.Cripto" />
-        <item itemvalue="Application.ConnectionWindow" />
-        <item itemvalue="Application.MainWindow" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -258,10 +198,10 @@
     </pin-to-top-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/BrokerUDP$Servidor.ic" NAME="Servidor Coverage Results" MODIFIED="1692799246950" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
+    <SUITE FILE_PATH="coverage/BrokerUDP$Cliente.ic" NAME="Cliente Coverage Results" MODIFIED="1692821907923" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
       <FILTER>org.poli.*</FILTER>
     </SUITE>
-    <SUITE FILE_PATH="coverage/BrokerUDP$Cliente.ic" NAME="Cliente Coverage Results" MODIFIED="1692821907923" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
+    <SUITE FILE_PATH="coverage/BrokerUDP$Servidor.ic" NAME="Servidor Coverage Results" MODIFIED="1692799246950" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
       <FILTER>org.poli.*</FILTER>
     </SUITE>
   </component>
