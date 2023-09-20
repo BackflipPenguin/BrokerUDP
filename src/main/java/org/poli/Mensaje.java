@@ -1,5 +1,6 @@
 package org.poli;
 
+import javax.crypto.SecretKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.*;
@@ -16,7 +17,6 @@ public class Mensaje {
     private int totalFragmentos;
     private Cripto cripto;
     private HashMap<Integer, Fragmento> fragmentos;
-
     public Mensaje(String contenido, Usuario creador, String codigoTopico, CRC32 crc32, int tamanoMaxDatagrama, Cripto cripto) {
         this.contenido = contenido;
         this.creador = creador;
@@ -81,7 +81,7 @@ public class Mensaje {
 
     }
 
-    public Collection<Fragmento> generarFragmentos(PublicKey destino) throws SignatureException {
+    public Collection<Fragmento> generarFragmentos(Usuario destino) throws SignatureException {
         int tamanoDatagrama = this.tamanoMaxDatagrama;
         String texto = contenido;
         // bytes reservados para el header de los fragmentos

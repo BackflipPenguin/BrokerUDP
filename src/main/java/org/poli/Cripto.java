@@ -1,13 +1,9 @@
 package org.poli;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
 import java.util.Base64;
 
 public class Cripto {
@@ -16,21 +12,29 @@ public class Cripto {
     Signature dsa;
 
     public Cripto() {
-        KeyPairGenerator keyGen = null;
+        KeyPair pair = null;
         try{
-            keyGen = KeyPairGenerator.getInstance("RSA");
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("[CRIPTO] NO EXISTE EL ALGORITMO");
-        }
-        keyGen.initialize(1024);
-        KeyPair pair = keyGen.generateKeyPair();
-        this.privateKey = pair.getPrivate();
-        this.publicKey = pair.getPublic();
-        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen.initialize(1024);
+            pair = keyGen.generateKeyPair();
+            this.privateKey = pair.getPrivate();
+            this.publicKey = pair.getPublic();
             dsa = Signature.getInstance("SHA256withRSA");
+      } catch (NoSuchAlgorithmException e) {
+            System.out.println("[CRIPTO] NO EXISTE EL ALGORITMO");
+            return;
+        }
+    }
+    public SecretKey generarSecreto() {
+        KeyGenerator symKeyGen = null;
+        try {
+            symKeyGen = KeyGenerator.getInstance("AES");
         } catch (NoSuchAlgorithmException e) {
             System.out.println("[CRIPTO] NO EXISTE EL ALGORITMO");
+            return null;
         }
+        symKeyGen.init(256);
+        return  symKeyGen.generateKey();
     }
 
     public String generarFirma(byte[] mensaje) {
@@ -56,6 +60,35 @@ public class Cripto {
         return dsa.verify(firmaDecoded);
     }
 
+    public EncriptedResult encriptar(byte[] input, SecretKey key){
+        try {
+            byte[] ivBytes = new byte[16];
+            new SecureRandom().nextBytes(ivBytes);
+            IvParameterSpec iv = new IvParameterSpec(ivBytes);
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+            return new EncriptedResult(
+                    Base64.getEncoder().encode(ivBytes),
+                    Base64.getEncoder().encode(cipher.doFinal(input)));
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException |
+                 InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            System.out.println("[CRIPTO] ERROR DE ENCRIPTACION");
+            return null;
+        }
+    }
+
+    public byte[] desencriptar(EncriptedResult er, SecretKey key) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES");
+            IvParameterSpec iv = new IvParameterSpec(er.getIv());
+            cipher.init(Cipher.DECRYPT_MODE, key, iv);
+            return cipher.doFinal(Base64.getDecoder().decode(er.getMessage()));
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException |
+                 InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            System.out.println("[CRIPTO] Error desencriptando.");
+            return null;
+        }
+    }
     public byte[] encriptar(byte[] mensajeBytes, PublicKey pubKeyDestino) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher encryptCipher = Cipher.getInstance("RSA");
         encryptCipher.init(Cipher.ENCRYPT_MODE, pubKeyDestino);
@@ -64,12 +97,11 @@ public class Cripto {
         return Base64.getEncoder().encode(encryptCipher.doFinal(mensajeBytes));
     }
 
-    public String desencriptar(byte[] mensajeCodificadoBytes) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+    public byte[] desencriptar(byte[] mensajeCodificadoBytes) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher decryptCipher = Cipher.getInstance("RSA");
         decryptCipher.init(Cipher.DECRYPT_MODE, privateKey);
         var mensajeEncriptadoBytes = Base64.getDecoder().decode(mensajeCodificadoBytes);
-        byte[] mensajeDesencriptadoBytes = decryptCipher.doFinal(mensajeEncriptadoBytes);
-        return new String(mensajeDesencriptadoBytes, StandardCharsets.UTF_8);
+        return decryptCipher.doFinal(mensajeEncriptadoBytes);
     }
 
     public PrivateKey getPrivateKey() {

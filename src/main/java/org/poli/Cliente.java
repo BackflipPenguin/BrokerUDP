@@ -14,7 +14,6 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.zip.CRC32;
 
 public class Cliente {
@@ -72,14 +71,14 @@ public class Cliente {
                 System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
-            String[] partes = mensaje.split(":", 7);
-            if (partes.length != 7){
+            String[] partes = mensaje.split(":", 8);
+            if (partes.length != 8){
                 System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
             var creador = topicos.get("SYS").getSuscriptor(partes[0]);
             if (creador == null){
-                creador = new Usuario(new InetSocketAddress(packet.getAddress(), packet.getPort()), partes[0], null);
+                creador = new Usuario(new InetSocketAddress(packet.getAddress(), packet.getPort()), partes[0], null, null);
             }
             Fragmento f = new Fragmento(partes, creador, cripto);
             var t = topicos.get(f.getCodigoTopico());
@@ -135,7 +134,7 @@ public class Cliente {
         this.topicos = new HashMap<>();
         this.executorService = executorService;
         this.cripto = new Cripto();
-        this.yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), nombreUsuario, cripto.getPublicKey());
+        this.yo = new Usuario(new InetSocketAddress(String.valueOf(channel.socket().getLocalAddress()), channel.socket().getLocalPort()), nombreUsuario, cripto.getPublicKey(), cripto.generarSecreto());
         topicos.put("SYS", new Topico("SYSTEM", "SYS", channel, serverAddr, yo, Utils.FRAG_SIZE, false, cripto, executorService));
         topicos.get("SYS").registrarse();
     }
