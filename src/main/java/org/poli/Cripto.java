@@ -65,8 +65,11 @@ public class Cripto {
             byte[] ivBytes = new byte[16];
             new SecureRandom().nextBytes(ivBytes);
             IvParameterSpec iv = new IvParameterSpec(ivBytes);
-            Cipher cipher = Cipher.getInstance("AES");
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+            System.out.println("[CRIPTO] ENCRIPTANDO: ");
+            System.out.println("[CRIPTO] INPUT: " + new String(input, StandardCharsets.UTF_8));
+            System.out.println("[CRIPTO] IV: " + Base64.getEncoder().encodeToString(ivBytes));
             return new EncriptedResult(
                     Base64.getEncoder().encode(ivBytes),
                     Base64.getEncoder().encode(cipher.doFinal(input)));
@@ -79,8 +82,9 @@ public class Cripto {
 
     public byte[] desencriptar(EncriptedResult er, SecretKey key) {
         try {
-            Cipher cipher = Cipher.getInstance("AES");
-            IvParameterSpec iv = new IvParameterSpec(er.getIv());
+            System.out.println("[CRIPTO] " + new String(Base64.getDecoder().decode(er.getIv()), StandardCharsets.UTF_8));
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            IvParameterSpec iv = new IvParameterSpec(Base64.getDecoder().decode(er.getIv()));
             cipher.init(Cipher.DECRYPT_MODE, key, iv);
             return cipher.doFinal(Base64.getDecoder().decode(er.getMessage()));
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException |

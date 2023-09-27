@@ -267,6 +267,7 @@ public class Fragmento {
             if(destino.getSecretKey() != null){
                 EncriptedResult result = cripto.encriptar(contenido,destino.getSecretKey()) ;
                 ivBytes = result.getIv();
+                contenido = result.getMessage();
             } else if (destino.getPubKey() != null){
                 contenido = cripto.encriptar(contenido, destino.getPubKey());
             }
