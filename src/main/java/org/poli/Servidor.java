@@ -1,14 +1,10 @@
 package org.poli;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.nio.channels.DatagramChannel;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
@@ -55,14 +51,14 @@ public class Servidor {
                System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
-            String[] partes = mensaje.split(":", 7);
-            if (partes.length != 7){
+            String[] partes = mensaje.split(":", 8);
+            if (partes.length != 8){
                 System.out.println("MENSAJE INCORRECTO");
                 continue;
             }
             var creador = topicos.get("SYS").getSuscriptor(partes[0]);
             if (creador == null){
-                creador = new Usuario(new InetSocketAddress(packet.getAddress(), packet.getPort()), partes[0], null);
+                creador = new Usuario(new InetSocketAddress(packet.getAddress(), packet.getPort()), partes[0], null, null);
             }
             var f = new Fragmento(partes, creador, cripto);
             var topicoDestino = topicos.get(f.getCodigoTopico());
@@ -85,6 +81,6 @@ public class Servidor {
         this.executorService = Executors.newFixedThreadPool(10);
         this.cripto = new Cripto();
         this.topicos = new HashMap<>();
-        yo = new Usuario(localAddress, "SERVIDOR", cripto.getPublicKey());
+        yo = new Usuario(localAddress, "SERVIDOR", cripto.getPublicKey(), null);
     }
 }

@@ -3,6 +3,8 @@ package org.poli;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -95,6 +97,10 @@ public class Topico {
         this.comandos = new HashMap<>();
         registrarComandos();
 
+        CommandHandler secok = (String[] sections, Mensaje mensaje, Topico caller) -> {
+            topicoSYS.getSuscriptor("SERVIDOR").setSecretKey(usuario.getSecretKey());
+            return "SECOK";
+        };
         CommandHandler reg = (String[] sections, Mensaje mensaje, Topico caller) -> {
             if (sections.length != 3)
                 caller.enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\ARG", mensaje.getCreador().getDireccion());
@@ -102,9 +108,9 @@ public class Topico {
             var encodedPubKey = new X509EncodedKeySpec(Base64.getDecoder().decode(sections[2].getBytes()));
             var kf = KeyFactory.getInstance("RSA");
             var pubkey = kf.generatePublic(encodedPubKey);
-            var user = new Usuario(mensaje.getCreador().getDireccion(), mensaje.getCreador().getNombre(), pubkey);
+            var user = new Usuario(mensaje.getCreador().getDireccion(), mensaje.getCreador().getNombre(), pubkey, null);
             getExecutorService().submit(() -> caller.suscribir(user));
-            return "REG";
+           return "REG";
         };
         CommandHandler key = (String[] sections, Mensaje mensaje, Topico caller) -> {
             caller.enviarSYS("\\REG\\" + Base64.getEncoder().encodeToString(caller.getUsuario().getPubKey().getEncoded()), mensaje.getCreador().getDireccion());
@@ -114,6 +120,19 @@ public class Topico {
             System.out.println("[ERR HANDLER] RESPUESTA DE ERROR: " + sections[3] + " EN EL MENSAJE CON UUID: " + sections[2]);
             return "ERR";
         };
+        CommandHandler sec = (String[] sections, Mensaje mensaje, Topico caller) -> {
+            if (!caller.isServer()){
+                caller.enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\NOCMD", mensaje.getCreador().getDireccion());
+                return "SEC";
+            }
+            if (sections.length != 3)
+                caller.enviarSYS("\\ERR\\" + mensaje.getUuid() + "\\ARG", mensaje.getCreador().getDireccion());
+            suscriptores.get(mensaje.getCreador().getNombre()).setSecretKey(new SecretKeySpec(Base64.getDecoder().decode(sections[2]), "AES"));
+            caller.enviarSYS("\\SECOK\\" + mensaje.getUuid(), mensaje.getCreador().getDireccion());
+            return "SEC";
+        };
+        this.comandos.put("SEC", sec);
+        this.comandos.put("SECOK", secok);
         this.comandos.put("REG", reg);
         this.comandos.put("KEY", key);
         this.comandos.put("ERR", err);
@@ -274,6 +293,8 @@ public class Topico {
         enviarSYS("\\REG\\" + Base64.getEncoder().encodeToString(usuario.getPubKey().getEncoded()), serverAddr);
         enviarSYS("\\KEY", serverAddr);
         enviarSYS("\\SUB", serverAddr);
+        System.out.println(usuario.getSecretKeyEncoded());
+        enviarSYS("\\SEC\\" + usuario.getSecretKeyEncoded(), serverAddr);
         subscripto = true;
     }
 
@@ -331,7 +352,7 @@ public class Topico {
     public void enviarSYS(String contenidoMensaje, SocketAddress destino) throws IOException {
         var mensaje = new Mensaje(contenidoMensaje, usuario, "SYS", crc32, tamanoDatagrama, cripto);
         try {
-            topicoSYS.enviar(mensaje, new Usuario((InetSocketAddress) destino, null, null));
+            topicoSYS.enviar(mensaje, new Usuario((InetSocketAddress) destino, null, null, null));
         } catch (SignatureException | NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
                  BadPaddingException | InvalidKeyException e) {
             throw new RuntimeException(e);
@@ -353,7 +374,7 @@ public class Topico {
         if (server) {
             System.out.println("[TOPICO] ENVIANDO MENSAJE " + mensaje.getUuid() + " CON CONTENIDO: " + mensaje.getContenido() + " A: " + destino);
         }
-        var fragmentos = mensaje.generarFragmentos(destino.getPubKey());
+        var fragmentos = mensaje.generarFragmentos(destino);
 
         for (var f: fragmentos) {
             var bytes = f.getBytes();

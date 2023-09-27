@@ -3,20 +3,24 @@ package org.poli;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.zip.CRC32;
 
 public class Fragmento {
     private Usuario creador;
+    private Usuario destino;
     private int indice;
     private byte[] contenido;
     private int totalPaquetes;
+    private byte[] ivBytes = new byte[]{};
     private long hash;
     private String codigoTopico;
     private byte[] envio;
@@ -28,7 +32,8 @@ public class Fragmento {
     private String header;
     private Cripto cripto;
     private Estado estado;
-    private PublicKey destino;
+    private SecretKey destinoAsim;
+
     public String getHeader() {
         return header;
     }
@@ -74,7 +79,7 @@ public class Fragmento {
         this.destino = null;
         generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
     }
-    public Fragmento(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32, Cripto cripto, PublicKey destino) throws SignatureException {
+    public Fragmento(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32, Cripto cripto, Usuario destino) throws SignatureException {
         this.creador = creador;
         this.indice = indice;
         this.contenido = contenido;
@@ -87,9 +92,22 @@ public class Fragmento {
         this.destino = destino;
         generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
     }
+    public Fragmento(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, byte[] contenido, String codigoTopico, CRC32 crc32, Cripto cripto, SecretKey destinoAsim) throws SignatureException {
+        this.creador = creador;
+        this.indice = indice;
+        this.contenido = contenido;
+        this.uuidMensaje = uuidMensaje;
+        this.crc32 = crc32;
+        this.totalPaquetes = totalPaquetes;
+        this.texto = new String(contenido, StandardCharsets.UTF_8);
+        this.codigoTopico = codigoTopico;
+        this.cripto = cripto;
+        this.destinoAsim = destinoAsim;
+        generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
+    }
     private void generateHeader(Usuario creador, String uuidMensaje, int indice, int totalPaquetes, String codigoTopico) throws SignatureException {
         String firma = "";
-        if (this.destino != null){
+        if (this.destino != null && this.destino.getPubKey() != null){
            firma = cripto.generarFirma(contenido);
         }
         this.header = creador.getNombre() + ":" + uuidMensaje + ":" + indice + ":" + totalPaquetes + ":" + codigoTopico + ":" + firma + ":";
@@ -115,7 +133,7 @@ public class Fragmento {
         return estado;
     }
 
-    public PublicKey getDestino() {
+    public Usuario getDestino() {
         return destino;
     }
 
@@ -176,7 +194,7 @@ public class Fragmento {
     }
 
     public Fragmento(String[] partes, Usuario autor, Cripto cripto) throws SignatureException {
-        if (partes.length != 7) {
+        if (partes.length != 8) {
             throw new RuntimeException();
         }
         this.cripto = cripto;
@@ -187,7 +205,11 @@ public class Fragmento {
         this.codigoTopico = partes[4];
         if (!partes[5].isEmpty()){
             try {
-                this.texto = cripto.desencriptar(partes[6].getBytes());
+                if (!partes[6].isEmpty()){
+                    this.texto = new String(cripto.desencriptar(new EncriptedResult(partes[6].getBytes(), partes[7].getBytes()), creador.getSecretKey()), StandardCharsets.UTF_8);
+                } else {
+                    this.texto = new String(cripto.desencriptar(partes[7].getBytes()), StandardCharsets.UTF_8);
+                }
             } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
                      BadPaddingException | InvalidKeyException e) {
                 System.out.println("[FRAGMENTO] ERROR DESENCRIPTANDO FRAGMENTO " + this.indice + " DEL MENSAJE CON UUID: " + this.uuidMensaje);
@@ -203,7 +225,7 @@ public class Fragmento {
             }
         } else {
             this.estado = Estado.CORRECTO;
-            this.texto = partes[6];
+            this.texto = partes[7];
         }
         this.contenido = this.texto.getBytes(StandardCharsets.UTF_8);
         generateHeader(creador, uuidMensaje,  indice, totalPaquetes, codigoTopico);
@@ -237,14 +259,21 @@ public class Fragmento {
         this.contenido = contenido;
     }
 
-    //                           1      2     3          4           5      6        7
-    // ESTRUCTURA FRAGMENTO    HASH:CREADOR:INDICE:TOTAL_PAQUETES:TOPICO:FIRMA:CONTENIDO
+    //                           1      2     3          4           5       6      7    8
+    // ESTRUCTURA FRAGMENTO    HASH:CREADOR:INDICE:TOTAL_PAQUETES:TOPICO:IV(SIM):FIRMA:CONTENIDO
     public byte[] getBytes() throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         var contenido = this.contenido;
         if (destino != null){
-           contenido = cripto.encriptar(contenido,destino) ;
+            if(destino.getSecretKey() != null){
+                EncriptedResult result = cripto.encriptar(contenido,destino.getSecretKey()) ;
+                ivBytes = result.getIv();
+                contenido = result.getMessage();
+            } else if (destino.getPubKey() != null){
+                contenido = cripto.encriptar(contenido, destino.getPubKey());
+            }
         }
-        var envio = Utils.arrayConcat(header.getBytes(StandardCharsets.UTF_8), contenido);
+        var headerBytes = Utils.arrayConcat(header.getBytes(StandardCharsets.UTF_8), Utils.arrayConcat(ivBytes,":".getBytes()));
+        var envio = Utils.arrayConcat(headerBytes, contenido);
         CRC32 crc = getCrc32();
         crc.update(envio);
         hash = crc.getValue();
