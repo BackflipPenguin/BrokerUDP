@@ -2,8 +2,10 @@ package org.poli;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.util.Arrays;
 import java.util.Base64;
 
 public class Cripto {
@@ -67,9 +69,13 @@ public class Cripto {
             IvParameterSpec iv = new IvParameterSpec(ivBytes);
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+            /*
             System.out.println("[CRIPTO] ENCRIPTANDO: ");
             System.out.println("[CRIPTO] INPUT: " + new String(input, StandardCharsets.UTF_8));
+            System.out.println("[CRIPTO] CLAVE: " + Base64.getEncoder().encodeToString(key.getEncoded()));
             System.out.println("[CRIPTO] IV: " + Base64.getEncoder().encodeToString(ivBytes));
+            System.out.println("[CRIPTO] RESULTADO ENCODEADO: " + Base64.getEncoder().encodeToString(cipher.doFinal(input)));
+*/
             return new EncriptedResult(
                     Base64.getEncoder().encode(ivBytes),
                     Base64.getEncoder().encode(cipher.doFinal(input)));
@@ -82,7 +88,12 @@ public class Cripto {
 
     public byte[] desencriptar(EncriptedResult er, SecretKey key) {
         try {
-            System.out.println("[CRIPTO] " + new String(Base64.getDecoder().decode(er.getIv()), StandardCharsets.UTF_8));
+            /*
+            System.out.println("[CRIPTO] DESENCRIPTANDO: " );
+            System.out.println("[CRIPTO] IV: " + new String(er.getIv(), StandardCharsets.UTF_8));
+            System.out.println("[CRIPTO] MENSAJE: " + new String(er.getMessage(), StandardCharsets.UTF_8));
+            System.out.println("[CRIPTO] CLAVE: " + Base64.getEncoder().encodeToString(key.getEncoded()));
+*/
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             IvParameterSpec iv = new IvParameterSpec(Base64.getDecoder().decode(er.getIv()));
             cipher.init(Cipher.DECRYPT_MODE, key, iv);

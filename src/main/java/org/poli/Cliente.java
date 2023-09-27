@@ -80,6 +80,8 @@ public class Cliente {
             if (creador == null){
                 creador = new Usuario(new InetSocketAddress(packet.getAddress(), packet.getPort()), partes[0], null, null);
             }
+            if (!creador.getNombre().equals("SERVIDOR"))
+                creador.setSecretKey(topicos.get("SYS").getSuscriptor("SERVIDOR").getSecretKey());
             Fragmento f = new Fragmento(partes, creador, cripto);
             var t = topicos.get(f.getCodigoTopico());
             try {
