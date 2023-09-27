@@ -3,6 +3,7 @@ package org.poli;
 import javax.crypto.SecretKey;
 import java.net.InetSocketAddress;
 import java.security.PublicKey;
+import java.util.Base64;
 import java.util.Objects;
 
 public class Usuario {
@@ -23,8 +24,12 @@ public class Usuario {
         return pubKey;
     }
 
+    public String getSecretKeyEncoded() {
+        return Base64.getEncoder().encodeToString(secretKey.getEncoded());
+    }
+
     public SecretKey getSecretKey() {
-        return secretKey;
+        return this.secretKey;
     }
 
     public void setSecretKey(SecretKey secretKey) {

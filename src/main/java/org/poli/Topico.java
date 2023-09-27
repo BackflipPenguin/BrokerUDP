@@ -293,7 +293,8 @@ public class Topico {
         enviarSYS("\\REG\\" + Base64.getEncoder().encodeToString(usuario.getPubKey().getEncoded()), serverAddr);
         enviarSYS("\\KEY", serverAddr);
         enviarSYS("\\SUB", serverAddr);
-        enviarSYS("\\SEC" + usuario.getSecretKey().toString(), serverAddr);
+        System.out.println(usuario.getSecretKeyEncoded());
+        enviarSYS("\\SEC\\" + usuario.getSecretKeyEncoded(), serverAddr);
         subscripto = true;
     }
 

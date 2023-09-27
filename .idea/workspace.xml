@@ -11,11 +11,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1900ab8a-e4de-4ac7-a73f-ec41164d73a0" name="Changes" comment="Ahora se puede elegir el nombre de usuario">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Servidor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Usuario.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Usuario.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,6 +34,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -71,7 +78,7 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Application.Client 2">
+  <component name="RunManager" selected="Application.Server">
     <configuration name="Client 2" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="org.poli.Main" />
       <module name="BrokerUDP" />
@@ -191,6 +198,20 @@
     <option name="LAST_COMMIT_MESSAGE" value="Ahora se puede elegir el nombre de usuario" />
   </component>
   <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/poli/Cripto.java</url>
+          <line>73</line>
+          <option name="timeStamp" value="12" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java</url>
+          <line>267</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
     <pin-to-top-manager>
       <pinned-members>
         <PinnedItemInfo parentTag="java.lang.Integer" memberName="value" />
@@ -198,10 +219,10 @@
     </pin-to-top-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/BrokerUDP$Cliente.ic" NAME="Cliente Coverage Results" MODIFIED="1692821907923" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
+    <SUITE FILE_PATH="coverage/BrokerUDP$Servidor.ic" NAME="Servidor Coverage Results" MODIFIED="1692799246950" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
       <FILTER>org.poli.*</FILTER>
     </SUITE>
-    <SUITE FILE_PATH="coverage/BrokerUDP$Servidor.ic" NAME="Servidor Coverage Results" MODIFIED="1692799246950" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
+    <SUITE FILE_PATH="coverage/BrokerUDP$Cliente.ic" NAME="Cliente Coverage Results" MODIFIED="1692821907923" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
       <FILTER>org.poli.*</FILTER>
     </SUITE>
   </component>
