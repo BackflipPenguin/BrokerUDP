@@ -13,11 +13,9 @@
     <list default="true" id="1900ab8a-e4de-4ac7-a73f-ec41164d73a0" name="Changes" comment="Ahora se puede elegir el nombre de usuario">
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cliente.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Cripto.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Topico.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/poli/Usuario.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/poli/Usuario.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,12 +76,12 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Application.Server">
+  <component name="RunManager" selected="Application.Client 2">
     <configuration name="Client 2" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="org.poli.Main" />
       <module name="BrokerUDP" />
       <option name="PROGRAM_PARAMETERS" value="client" />
-      <option name="WORKING_DIRECTORY" value="$USER_HOME$/" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -92,7 +90,20 @@
       <option name="MAIN_CLASS_NAME" value="org.poli.Main" />
       <module name="BrokerUDP" />
       <option name="PROGRAM_PARAMETERS" value="client" />
-      <option name="WORKING_DIRECTORY" value="$USER_HOME$/" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Cripto" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="org.poli.Cripto" />
+      <module name="BrokerUDP" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="org.poli.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -109,7 +120,13 @@
       <item itemvalue="Application.Server" />
       <item itemvalue="Application.Client" />
       <item itemvalue="Application.Client 2" />
+      <item itemvalue="Application.Cripto" />
     </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.Cripto" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -149,6 +166,7 @@
       <workItem from="1694465218288" duration="191000" />
       <workItem from="1694465420076" duration="6855000" />
       <workItem from="1694619897062" duration="8639000" />
+      <workItem from="1695829681068" duration="3119000" />
     </task>
     <task id="LOCAL-00001" summary="Implementado:&#10;- Desfragmentacion de mensajes&#10;- Broadcast del servidor&#10;- Envio de mensajes del cliente&#10;- Recepcion y analisis de mensajes del servidor">
       <option name="closed" value="true" />
@@ -198,20 +216,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="Ahora se puede elegir el nombre de usuario" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/org/poli/Cripto.java</url>
-          <line>73</line>
-          <option name="timeStamp" value="12" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/org/poli/Fragmento.java</url>
-          <line>267</line>
-          <option name="timeStamp" value="14" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
     <pin-to-top-manager>
       <pinned-members>
         <PinnedItemInfo parentTag="java.lang.Integer" memberName="value" />

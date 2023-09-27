@@ -206,9 +206,9 @@ public class Fragmento {
         if (!partes[5].isEmpty()){
             try {
                 if (!partes[6].isEmpty()){
-                    this.texto = Arrays.toString(cripto.desencriptar(new EncriptedResult(partes[6].getBytes(), partes[7].getBytes()), creador.getSecretKey()));
+                    this.texto = new String(cripto.desencriptar(new EncriptedResult(partes[6].getBytes(), partes[7].getBytes()), creador.getSecretKey()), StandardCharsets.UTF_8);
                 } else {
-                    this.texto = Arrays.toString(cripto.desencriptar(partes[7].getBytes()));
+                    this.texto = new String(cripto.desencriptar(partes[7].getBytes()), StandardCharsets.UTF_8);
                 }
             } catch (NoSuchPaddingException | IllegalBlockSizeException | NoSuchAlgorithmException |
                      BadPaddingException | InvalidKeyException e) {
